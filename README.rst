@@ -14,7 +14,7 @@ easymodel
 .. image:: https://coveralls.io/repos/storax/easymodel/badge.png
     :target: https://coveralls.io/r/storax/easymodel
 
-.. image:: http://img.shields.io/pypi/l/easymodel.svg
+.. image:: http://img.shields.io/pypi/l/easymodel.png
     :target: https://pypi.python.org/pypi/easymodel
 
 
