@@ -17,6 +17,7 @@ before_install:
   - lsb_release -a
 install:
   - pip install tox
+  - pip install pyside
 script:
   - tox -v
 notifications:
