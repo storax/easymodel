@@ -1,5 +1,7 @@
 language: python
 python: 2.7
+virtualenv:
+  system_site_packages: true
 env:
   global:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
@@ -19,7 +21,6 @@ install:
   - pip install tox
   - sudo apt-get update
   - sudo apt-get install python-pyside
-
 script:
   - tox -v
 notifications:
