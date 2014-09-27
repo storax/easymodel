@@ -1,12 +1,12 @@
 language: python
 python: 2.7
-virtualenv:
-  system_site_packages: true
 env:
   global:
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=check
+    - TOXENV=2.6,coveralls
+    - TOXENV=2.6-nocover
     - TOXENV=2.7,coveralls
     - TOXENV=2.7-nocover
 before_install:
@@ -17,10 +17,6 @@ before_install:
   - lsb_release -a
 install:
   - pip install tox
-  - sudo apt-get install libqt4-dev
-  - pip install --find-links https://parkin.github.io/python-wheelhouse/ --use-wheel PySide;
-  # Travis CI servers use virtualenvs, so we need to finish the install by the following
-  - python ~/virtualenv/python${TRAVIS_PYTHON_VERSION}_with_system_site_packages/bin/pyside_postinstall.py -install
 script:
   - tox -v
 notifications:
