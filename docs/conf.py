@@ -283,7 +283,10 @@ if 'sphinx-build' in sys.argv[0].lower():
 
 
 # Mocking out PySide for Autodoc
-from mock import MagicMock
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import Mock as MagicMock
 
 
 class Mock(MagicMock):
