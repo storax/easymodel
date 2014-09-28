@@ -16,9 +16,10 @@ before_install:
   - uname -a
   - lsb_release -a
 install:
+  - sudo apt-get install libqt4-dev
   - pip install tox
 script:
-  - tox -v
+  - tox -v -c travistox.ini
 notifications:
   email:
     on_success: never
