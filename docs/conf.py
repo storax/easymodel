@@ -280,3 +280,19 @@ if 'sphinx-build' in sys.argv[0].lower():
     sys.path.append(os.path.dirname(__file__))
     import updatedoc
     updatedoc.main([])
+
+
+# Mocking out PySide for Autodoc
+try:
+    from unittest.mock import MagicMock
+except ImportError:
+    from mock import Mock as MagicMock
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls,name):
+        return Mock()
+
+MOCK_MODULES = ['PySide']
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)

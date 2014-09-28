@@ -35,7 +35,7 @@ class PyTest(TestCommand):
 
 
 long_description = read('README.rst', 'HISTORY.rst')
-install_requires = ['PySide']
+install_requires = ['pyside']
 tests_require = ['pytest']
 
 
