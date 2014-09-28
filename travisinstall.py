@@ -16,7 +16,7 @@ def start_process(args):
         print('Pip install returncode: %s for args %s' % (rc, args), file=sys.stderr)
         sys.exit(rc)
 
-args = ['pip', 'install', 'PySide', '--no-index', '--find-links', 'https://parkin.github.io/python-wheelhouse/']
+args = ['pip', 'install', 'PySide', '--no-index', '--find-links', 'https://8167b5c3a2af93a0a9fb-13c6eee0d707a05fa610c311eec04c66.ssl.cf2.rackcdn.com/']
 start_process(args)
 
 args = ['pip', 'install', '--pre']
