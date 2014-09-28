@@ -319,7 +319,9 @@ class TreeModel(QtCore.QAbstractItemModel):
         return self.createIndex(parentItem.row(), 0, parentItem)
 
     def rowCount(self, parent):
-        """Returns the number of rows under the given parent. When the parent is valid it means that rowCount is returning the number of children of parent.
+        """Returns the number of rows under the given parent.
+        When the parent is valid it means that rowCount is returning the number
+        of children of parent.
 
         :param parent: the parent index
         :type parent: :class:`QtCore.QModelIndex`:
@@ -390,7 +392,8 @@ class TreeModel(QtCore.QAbstractItemModel):
 
         :param row: the index where the rows get inserted
         :type row: int
-        :param item: the item to insert. When creating the item, make sure it's parent is None. If not it will defeat the purpose of this function.
+        :param item: the item to insert. When creating the item, make sure it's parent is None.
+                     If not it will defeat the purpose of this function.
         :type item: :class:`TreeItem`
         :param parent: the parent
         :type parent: class:`QtCore.QModelIndex`
@@ -403,7 +406,7 @@ class TreeModel(QtCore.QAbstractItemModel):
         item._parent = parentitem
         parentitem.childItems.insert(row, item)
         self.endInsertRows()
-        #self.insertRows(len(parentitem.childItems), 1, parent)
+        # self.insertRows(len(parentitem.childItems), 1, parent)
         return True
 
     @property
