@@ -19,7 +19,7 @@ import abc
 from PySide import QtCore
 
 
-class ItemData(object):
+class ItemData(object):  # pragma: no cover
     """An abstract class that holds data and is used as an interface for TreeItems
 
     When subclassing implement :meth:`ItemData.data` and :meth:`ItemData.column_count`.
@@ -70,6 +70,8 @@ class ItemData(object):
 
     def flags(self, ):
         """Return the item flags for the item
+
+        Default is QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
         :returns: the item flags
         :rtype: QtCore.Qt.ItemFlags

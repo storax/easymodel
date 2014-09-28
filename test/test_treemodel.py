@@ -37,6 +37,7 @@ class Test_ListItemData():
         assert self.slistdata.data(-1, DR) is None
         assert self.slistdata.data(3, DR) is None
         assert self.slistdata.data(99, DR) is None
+        assert self.slistdata.internal_data() is self.strlist
 
 
 # stub test data
@@ -60,11 +61,15 @@ class StubItemData2(treemodel.ItemData):
     def column_count(self):
         return 2
 
+    def flags(self):
+        return 99
+
 
 class Test_TreeItem():
     def setup(self):
         self.root = treemodel.TreeItem(None)
-        self.c1 = treemodel.TreeItem(StubItemData2(), self.root)
+        self.itdata1= StubItemData2()
+        self.c1 = treemodel.TreeItem(self.itdata1, self.root)
         self.c2 = treemodel.TreeItem(StubItemData2(), self.root)
         self.c3 = treemodel.TreeItem(StubItemData1(), self.c2)
 
@@ -103,6 +108,15 @@ class Test_TreeItem():
         assert self.c1.parent() is self.root
         assert self.c2.parent() is self.root
         assert self.c3.parent() is self.c2
+
+    def test_itemdata(self):
+        assert self.c1.itemdata() is self.itdata1
+
+    def test_internal_data(self):
+        assert self.c1.internal_data() is None
+
+    def test_flags(self):
+        assert self.c1.flags() == 99
 
 
 class Test_TreeModel():
@@ -205,3 +219,7 @@ class Test_TreeModel():
         assert m.index(0, 0, parent).internalPointer() is newi2
         assert m.index(1, 0, parent).internalPointer() is newi1
         assert m.index(2, 0, parent).internalPointer() is newi3
+
+    def test_flags(self):
+        self.m.flags(QtCore.QModelIndex())
+        assert self.m.flags(self.m.index(0,0,QtCore.QModelIndex())) == 99
