@@ -34,6 +34,11 @@ class PyTest(TestCommand):
         sys.exit(errcode)
 
 
+about={}
+initfile = os.path.join(here, 'src', 'easymodel', '__init__.py')
+with open(initfile) as fp:
+    exec(fp.read(), about)
+
 long_description = read('README.rst', 'HISTORY.rst')
 install_requires = ['pyside']
 tests_require = ['pytest']
@@ -41,11 +46,11 @@ tests_require = ['pytest']
 
 setup(
     name='easymodel',
-    version='0.1.0',
+    version=about['__version__'],
     description='Qt Models and Views made easy with general purpose Model and a Widget delegate.',
     long_description=long_description,
-    author='David Zuber',
-    author_email='zuber.david@gmx.de',
+    author=about['__author__'],
+    author_email=about['__email__'],
     url='https://github.com/storax/easymodel',
     packages=find_packages('src'),
     package_dir={'': 'src'},
@@ -58,7 +63,7 @@ setup(
     keywords='easymodel',
     test_suite='easymodel.test.easymodel',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
