@@ -427,7 +427,6 @@ class WD_TreeView(WidgetDelegateViewMixin, QtGui.QTreeView):
 
     By default the resize mode of the header will resize to contents.
     """
-    pass
 
     def __init__(self, *args, **kwargs):
         """Initialize a new treeview
