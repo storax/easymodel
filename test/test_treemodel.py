@@ -42,9 +42,16 @@ class Test_ListItemData():
 
 # stub test data
 class StubItemData1(treemodel.ItemData):
+    def __init__(self):
+        self.d = "Data1"
+
     def data(self, column, role):
-        if role == QtCore.Qt.DisplayRole:
-            return "Data1"
+        if role == DR:
+            return self.d
+
+    def set_data(self, column, value, role):
+        if role == DR:
+            self.d = value
 
     def column_count(self):
         return 1
@@ -52,7 +59,7 @@ class StubItemData1(treemodel.ItemData):
 
 class StubItemData2(treemodel.ItemData):
     def data(self, column, role):
-        if role == QtCore.Qt.DisplayRole:
+        if role == DR:
             if column == 0:
                 return "Data2"
             elif column == 1:
@@ -114,6 +121,13 @@ class Test_TreeItem():
 
     def test_internal_data(self):
         assert self.c1.internal_data() is None
+
+    def test_set_data(self):
+        itdata = StubItemData1()
+        ti = treemodel.TreeItem(itdata,)
+        nd = "New Data"
+        ti.set_data(0, nd, DR)
+        assert ti.data(0, DR) == nd
 
 
 class Test_TreeModel():
@@ -180,6 +194,15 @@ class Test_TreeModel():
         assert self.m.data(c2i, DR) == "Data2"
         assert self.m.data(c22i, DR) == "Data3"
         assert self.m.data(c3i, DR) == "Data1"
+
+    def test_set_data(self):
+        pi = self.m.index_of_item(self.c4)
+        c5i = self.m.index(0, 0, pi)
+        assert self.m.data(c5i, DR) == "Data1"
+        nd = "New Data"
+        self.m.setData(c5i, nd, DR)
+        assert self.m.data(c5i, DR) == nd
+
 
     def test_headerdata(self):
         assert self.m.headerData(0, QtCore.Qt.Horizontal, DR) == '1'

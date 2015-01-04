@@ -24,6 +24,7 @@ class ItemData(object):
 
     When subclassing implement :meth:`ItemData.data` and :meth:`ItemData.column_count`.
     It is advised to reimplement :meth:`ItemData.internal_data` too.
+    For editable models, check :meth:`ItemData.set_data`.
     """
     __metaclass__ = abc.ABCMeta
 
@@ -45,6 +46,22 @@ class ItemData(object):
         :raises: None
         """
         pass
+
+    def set_data(self, column, value, role):
+        """Set the data for the given column to value
+
+        The default implementation returns False
+
+        :param column: the column to set
+        :type column: int
+        :param value: the value to set
+        :param role: the role, usually EditRole
+        :type role: :class:`QtCore.Qt.ItemDataRole`
+        :returns: True, if editing was successfull
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        return False
 
     @abc.abstractmethod
     def column_count(self, ):  # pragma: no cover
@@ -89,15 +106,18 @@ class ListItemData(ItemData):
     For DisplayRole the objects are converted to strings with ``str()``.
     """
 
-    def __init__(self, liste):
+    def __init__(self, liste, editable=False):
         """Initialize a new StringItemData with the given list
 
         :param list: a list of objects, one for each column
         :type list: list of objects
+        :param editable: If True, the list is editable
+        :type editable: :class:`bool`
         :raises: None
         """
         super(ListItemData, self).__init__()
         self._list = liste
+        self._editable = editable
 
     def data(self, column, role):
         """Return the data for the specified column and role
@@ -116,6 +136,26 @@ class ListItemData(ItemData):
             if column >= 0 and column < len(self._list):
                 return str(self._list[column])
 
+    def set_data(self, column, value, role):
+        """Set the data for the given column to value
+
+        The default implementation returns False
+
+        :param column: the column to set
+        :type column: int
+        :param value: the value to set
+        :param role: the role, usually EditRole
+        :type role: :class:`QtCore.Qt.ItemDataRole`
+        :returns: True, if editing was successfull
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        if role == QtCore.Qt.EditRole or role == QtCore.Qt.DisplayRole:
+            self._list[column] = value
+            return True
+        else:
+            return False
+
     def column_count(self, ):
         """Return the number of columns that can be queried for data
 
@@ -133,6 +173,22 @@ class ListItemData(ItemData):
         :raises: None
         """
         return self._list
+
+    def flags(self, column):
+        """Return the item flags for the item
+
+        Default is QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+
+        :param column: the column to query
+        :type column: int
+        :returns: the item flags
+        :rtype: QtCore.Qt.ItemFlags
+        :raises: None
+        """
+        flags = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        if self._editable:
+            flags = flags | QtCore.Qt.ItemIsEditable
+        return flags
 
 
 class TreeItem(object):
@@ -156,7 +212,7 @@ class TreeItem(object):
         """Initialize a new TreeItem that holds some data and might be parented under parent
 
         The child count will be zero. Will automatically set the parent and update the model
-        if the parent is not None. 
+        if the parent is not None.
 
         :param data: the data item. if the tree item is the root,
                      the data will be used for horizontal headers!
@@ -289,6 +345,22 @@ class TreeItem(object):
         """
         if self._data is not None and (column >= 0 or column < self._data.column_count()):
             return self._data.data(column, role)
+
+    def set_data(self, column, value, role):
+        """Set the data of column to value
+
+        :param column: the column to set
+        :type column: int
+        :param value: the value to set
+        :param role: the role, usually EditRole
+        :type role: :class:`QtCore.Qt.ItemDataRole`
+        :returns: True, if data successfully changed
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        if not self._data or column >= self._data.column_count():
+            return False
+        return self._data.set_data(column, value, role)
 
     def parent(self, ):
         """Return the parent tree item
@@ -464,7 +536,7 @@ class TreeModel(QtCore.QAbstractItemModel):
         """Return the data stored under the given role for the item referred to by the index.
 
         :param index: the index
-        :type index: QModelIndex
+        :type index: :class:`QtCore.QModelIndex`
         :param role: the data role
         :type role: QtCore.Qt.ItemDataRole
         :returns: some data depending on the role
@@ -474,6 +546,26 @@ class TreeModel(QtCore.QAbstractItemModel):
             return
         item = index.internalPointer()
         return item.data(index.column(), role)
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        """Set the data of the given index to value
+
+        :param index: the index to set
+        :type index: :class:`QtCore.QModelIndex`
+        :param value: the value to set
+        :param role: the role, usually edit role
+        :type role: :data:`QtCore.Qt.ItemDataRole`
+        :returns: True, if successfull, False if unsuccessfull
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        if not index.isValid():
+            return False
+        item = index.internalPointer()
+        r = item.set_data(index.column(), value, role)
+        if r:
+            self.dataChanged.emit(index, index)
+        return r
 
     def headerData(self, section, orientation, role):
         """Return the header data
