@@ -22,8 +22,6 @@ You can either use the :class:`WidgetDelegateViewMixin` for your own views or us
 of the premade views: :class:`WD_AbstractItemView`, :class:`WD_ListView`, :class:`WD_TableView`
 :class:`WD_TreeView`.
 """
-
-
 from functools import partial
 
 from PySide import QtCore, QtGui
@@ -40,7 +38,7 @@ class WidgetDelegate(QtGui.QStyledItemDelegate):
        * :meth:`WidgetDelegate.setEditorData`
        * :meth:`WidgetDelegate.setModelData`
 
-    .. important:: Make sure that the model returns the ItemIsEditable flag!
+    .. Note:: Make sure that the model returns the ItemIsEditable flag!
 
     I recommend using one of the views in this module, because they issue click events, when
     an index is clicked.
@@ -343,6 +341,9 @@ class WidgetDelegateViewMixin(object):
         if not widget:
             # close all editors, then start editing
             delegate.close_editors()
+            # Force editing. If in editing state, view will refuse editing.
+            if self.state() == self.EditingState:
+                self.setState(self.NoState)
             self.edit(i)
             # get the editor widget. if there is None, there is nothing to do so return
             widget = delegate.edit_widget(i)
@@ -426,12 +427,11 @@ class WD_TreeView(WidgetDelegateViewMixin, QtGui.QTreeView):
 
     By default the resize mode of the header will resize to contents.
     """
+    pass
 
     def __init__(self, *args, **kwargs):
         """Initialize a new treeview
 
-        :returns: None
-        :rtype: None
         :raises: None
         """
         super(WD_TreeView, self).__init__(*args, **kwargs)
