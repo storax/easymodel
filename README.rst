@@ -32,4 +32,5 @@ The full documentation is at http://easymodel.rtfd.org.
 Features
 --------
 
-* TODO
+* Easy to use tree model for arbitrary data
+* Widgets in views via delegates.

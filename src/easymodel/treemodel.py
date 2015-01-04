@@ -8,7 +8,7 @@ If not, make sure the data method can handle columns outside their column count.
 If you want to create a tree, create the needed itemdata classes,
 create a root tree item that is parent for all top-level items.
 The root item does not have to provide data, so the data might be None.
-It is advides to use :class:`jukebox.core.gui.treemodel.ListItemData` because the data in the list
+It is advides to use :class:`ListItemData` because the data in the list
 will be used for the headers.
 Then create the tree items with their appropriate data instances.
 Finally create a tree model instance with the root tree item.
@@ -19,16 +19,17 @@ import abc
 from PySide import QtCore
 
 
-class ItemData(object):  # pragma: no cover
+class ItemData(object):
     """An abstract class that holds data and is used as an interface for TreeItems
 
     When subclassing implement :meth:`ItemData.data` and :meth:`ItemData.column_count`.
     It is advised to reimplement :meth:`ItemData.internal_data` too.
+    For editable models, check :meth:`ItemData.set_data`.
     """
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def data(self, column, role):
+    def data(self, column, role):  # pragma: no cover
         """Return the data for the specified column and role
 
         The column addresses one attribute of the data.
@@ -46,8 +47,24 @@ class ItemData(object):  # pragma: no cover
         """
         pass
 
+    def set_data(self, column, value, role):
+        """Set the data for the given column to value
+
+        The default implementation returns False
+
+        :param column: the column to set
+        :type column: int
+        :param value: the value to set
+        :param role: the role, usually EditRole
+        :type role: :class:`QtCore.Qt.ItemDataRole`
+        :returns: True, if editing was successfull
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        return False
+
     @abc.abstractmethod
-    def column_count(self, ):
+    def column_count(self, ):  # pragma: no cover
         """Return the number of columns that can be queried for data
 
         :returns: the number of columns
@@ -68,11 +85,13 @@ class ItemData(object):  # pragma: no cover
         """
         return None
 
-    def flags(self, ):
+    def flags(self, column):
         """Return the item flags for the item
 
         Default is QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
+        :param column: the column to query
+        :type column: int
         :returns: the item flags
         :rtype: QtCore.Qt.ItemFlags
         :raises: None
@@ -87,15 +106,18 @@ class ListItemData(ItemData):
     For DisplayRole the objects are converted to strings with ``str()``.
     """
 
-    def __init__(self, liste):
-        """ Constructs a new StringItemData with the given list
+    def __init__(self, liste, editable=False):
+        """Initialize a new StringItemData with the given list
 
         :param list: a list of objects, one for each column
         :type list: list of objects
+        :param editable: If True, the list is editable
+        :type editable: :class:`bool`
         :raises: None
         """
         super(ListItemData, self).__init__()
         self._list = liste
+        self._editable = editable
 
     def data(self, column, role):
         """Return the data for the specified column and role
@@ -113,6 +135,26 @@ class ListItemData(ItemData):
         if role == QtCore.Qt.DisplayRole:
             if column >= 0 and column < len(self._list):
                 return str(self._list[column])
+
+    def set_data(self, column, value, role):
+        """Set the data for the given column to value
+
+        The default implementation returns False
+
+        :param column: the column to set
+        :type column: int
+        :param value: the value to set
+        :param role: the role, usually EditRole
+        :type role: :class:`QtCore.Qt.ItemDataRole`
+        :returns: True, if editing was successfull
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        if role == QtCore.Qt.EditRole or role == QtCore.Qt.DisplayRole:
+            self._list[column] = value
+            return True
+        else:
+            return False
 
     def column_count(self, ):
         """Return the number of columns that can be queried for data
@@ -132,6 +174,22 @@ class ListItemData(ItemData):
         """
         return self._list
 
+    def flags(self, column):
+        """Return the item flags for the item
+
+        Default is QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+
+        :param column: the column to query
+        :type column: int
+        :returns: the item flags
+        :rtype: QtCore.Qt.ItemFlags
+        :raises: None
+        """
+        flags = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+        if self._editable:
+            flags = flags | QtCore.Qt.ItemIsEditable
+        return flags
+
 
 class TreeItem(object):
     """General TreeItem
@@ -142,23 +200,92 @@ class TreeItem(object):
     Even if you have multiple top level items, they are all grouped under one
     root. The data for the root item can be None but it is advised to use
     a ListItemData so you can provide horizontal headers.
+
+    TreeItems should always belong to only one model.
+    Once a new TreeModel gets initialized all TreeItems will share the same model.
+    When you add a new Item or delete one, the model gets automatically updated.
+    You do not need to call TreeModel insertRow or removeRow. Just use add_child, remove_child
+    or create a new TreeItem and provide a parent item to the constructor.
     """
 
     def __init__(self, data, parent=None):
-        """Constructs a new TreeItem that holds some data and might be parented under parent
+        """Initialize a new TreeItem that holds some data and might be parented under parent
 
-        :param data: the data item. if the tree item is the root, the data will be used for horizontal headers!
-                     It is recommended to use :class:`jukebox.core.gui.treeitem.ListItemData` in that case.
-        :type data: :class:`jukebox.core.gui.treemodel.ItemData`
+        The child count will be zero. Will automatically set the parent and update the model
+        if the parent is not None.
+
+        :param data: the data item. if the tree item is the root,
+                     the data will be used for horizontal headers!
+                     It is recommended to use :class:`ListItemData` in that case.
+        :type data: :class:`ItemData`
         :param parent: the parent treeitem
-        :type parent: :class:`jukebox.core.gui.treemodel.TreeItem`
+        :type parent: :class:`TreeItem`
         :raises: None
         """
+        self._model = None
         self._data = data
         self._parent = parent
-        if self._parent is not None:
-            self._parent.childItems.append(self)
         self.childItems = []
+        if self._parent is not None:
+            self._parent.add_child(self)
+
+    def get_model(self, ):
+        """Return the model the item belongs to
+
+        :returns: the model the item belongs to or None if it belongs to none
+        :rtype: :class:`TreeModel` | None
+        :raises: None
+        """
+        return self._model
+
+    def set_model(self, model):
+        """Set the model the item belongs to
+
+        A TreeItem can only belong to one model.
+
+        :param model: the model the item belongs to
+        :type model: :class:`Treemodel`
+        :returns: None
+        :rtype: None
+        :raises: None
+        """
+        self._model = model
+        for c in self.childItems:
+            c.set_model(model)
+
+    def add_child(self, child):
+        """Add child to children of this TreeItem
+
+        :param child: the child TreeItem
+        :type child: :class:`TreeItem`
+        :returns: None
+        :rtype: None
+        :raises: None
+        """
+        child.set_model(self._model)
+        if self._model:
+            row = len(self.childItems)
+            parentindex = self._model.index_of_item(self)
+            self._model.insertRow(row, child, parentindex)
+        else:
+            self.childItems.append(child)
+
+    def remove_child(self, child):
+        """Remove the child from this TreeItem
+
+        :param child: the child TreeItem
+        :type child: :class:`TreeItem`
+        :returns: None
+        :rtype: None
+        :raises: ValueError
+        """
+        child.set_model(None)
+        if self._model:
+            row = self.childItems.index(child)
+            parentindex = self._model.index_of_item(self)
+            self._model.removeRow(row, parentindex)
+        else:
+            self.childItems.remove(child)
 
     def child(self, row):
         """Return the child at the specified row
@@ -166,7 +293,7 @@ class TreeItem(object):
         :param row: the row number
         :type row: int
         :returns: the child
-        :rtype: :class:`jukebox.core.gui.treemodel.TreeItem`
+        :rtype: :class:`TreeItem`
         :raises: IndexError
         """
         return self.childItems[row]
@@ -194,6 +321,8 @@ class TreeItem(object):
     def column_count(self, ):
         """Return the number of columns that the children have
 
+        If there are no children, return the column count of its own data.
+
         :returns: the column count of the children data
         :rtype: int
         :raises: None
@@ -201,7 +330,7 @@ class TreeItem(object):
         if self.child_count():
             return self.childItems[0]._data.column_count()
         else:
-            return 0
+            return self._data.column_count() if self._data else 0
 
     def data(self, column, role):
         """Return the data for the column and role
@@ -217,14 +346,47 @@ class TreeItem(object):
         if self._data is not None and (column >= 0 or column < self._data.column_count()):
             return self._data.data(column, role)
 
+    def set_data(self, column, value, role):
+        """Set the data of column to value
+
+        :param column: the column to set
+        :type column: int
+        :param value: the value to set
+        :param role: the role, usually EditRole
+        :type role: :class:`QtCore.Qt.ItemDataRole`
+        :returns: True, if data successfully changed
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        if not self._data or column >= self._data.column_count():
+            return False
+        return self._data.set_data(column, value, role)
+
     def parent(self, ):
         """Return the parent tree item
 
         :returns: the parent or None if there is no parent
-        :rtype: :class:`jukebox.core.gui.treemodel.TreeItem`
+        :rtype: :class:`TreeItem`
         :raises: None
         """
         return self._parent
+
+    def set_parent(self, parent):
+        """Set the parent of the treeitem
+
+        :param parent: parent treeitem
+        :type parent: :class:`TreeItem` | None
+        :returns: None
+        :rtype: None
+        :raises: None
+        """
+        if self._parent == parent:
+            return
+        if self._parent:
+            self._parent.remove_child(self)
+        self._parent = parent
+        if parent:
+            parent.add_child(self)
 
     def itemdata(self, ):
         """Return the internal :class:`ItemData`
@@ -247,35 +409,51 @@ class TreeItem(object):
         """
         return self._data.internal_data()
 
-    def flags(self, ):
+    def flags(self, index):
         """Return the flags for the item
 
+        :param index: the index to query
+        :type index: :class:`QtCore.QModelIndex`
         :returns: the flags
         :rtype: QtCore.Qt.ItemFlags
         :raises: None
         """
-        return self._data.flags()
+        return self._data.flags(index.column())
 
 
 class TreeModel(QtCore.QAbstractItemModel):
-    """A tree model that uses the :class:`jukebox.core.gui.treemodel.TreeItem` to represent a general tree.
+    """A tree model that uses the :class:`TreeItem` to represent a general tree.
 
+    The model uses :class:`TreeItem` instances in an hierarchy to build a tree.
+    Each tree item represents a row. The tree items can hold arbitrary :class:`ItemData`
+    instances.
+
+    The model will get automatically updated, when the hierarchy of the tree items changes.
+    You rarely have to use model methods for that. Just use methods of the tree items.
+
+    All models need at least a root. The root is responsible for the headers.
+    So the :class:`ItemData` of the root should have a columns for each header and return
+    a string for them when queried with :data:`QtCore.Qt.DisplayRole`. Only horizontal
+    headers are supported at the moment. Vertical headers get numbers.
     """
 
     def __init__(self, root, parent=None):
-        """Constructs a new tree model with the given root treeitem
+        """Initialize a new tree model with the given root treeitem
 
-        :param root:
-        :type root:
-        :param parent:
-        :type parent:
+        :param root: the root tree item. The root tree item is responsible for the headers.
+                     A :class:`ListItemData` with the headers is suitable as data for the item.
+        :type root: :class:`TreeItem`
+        :param parent: the parent for the model
+        :type parent: :class:`QtCore.QObject`
         :raises: None
         """
         super(TreeModel, self).__init__(parent)
         self._root = root
+        self._root.set_model(self)
 
     def index(self, row, column, parent=None):
-        """Returns the index of the item in the model specified by the given row, column and parent index.
+        """Return the index of the item in the model specified by the given row,
+        column and parent index.
 
         :param row: the row of the item
         :type row: int
@@ -304,7 +482,8 @@ class TreeModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
 
     def parent(self, index):
-        """Returns the parent of the model item with the given index. If the item has no parent, an invalid QModelIndex is returned.
+        """Return the parent of the model item with the given index.
+        If the item has no parent, return an invalid QModelIndex.
 
         :param index: the index that you want to know the parent of
         :type index: :class:`QtCore.QModelIndex`
@@ -321,8 +500,8 @@ class TreeModel(QtCore.QAbstractItemModel):
         return self.createIndex(parentItem.row(), 0, parentItem)
 
     def rowCount(self, parent):
-        """Returns the number of rows under the given parent.
-        When the parent is valid it means that rowCount is returning the number
+        """Return the number of rows under the given parent.
+        When the parent is valid return rowCount the number
         of children of parent.
 
         :param parent: the parent index
@@ -340,7 +519,7 @@ class TreeModel(QtCore.QAbstractItemModel):
         return parentItem.child_count()
 
     def columnCount(self, parent):
-        """Returns the number of columns for the children of the given parent.
+        """Return the number of columns for the children of the given parent.
 
         :param parent: the parent index
         :type parent: :class:`QtCore.QModelIndex`:
@@ -354,10 +533,10 @@ class TreeModel(QtCore.QAbstractItemModel):
             return self._root.column_count()
 
     def data(self, index, role=QtCore.Qt.DisplayRole):
-        """Returns the data stored under the given role for the item referred to by the index.
+        """Return the data stored under the given role for the item referred to by the index.
 
         :param index: the index
-        :type index: QModelIndex
+        :type index: :class:`QtCore.QModelIndex`
         :param role: the data role
         :type role: QtCore.Qt.ItemDataRole
         :returns: some data depending on the role
@@ -368,17 +547,41 @@ class TreeModel(QtCore.QAbstractItemModel):
         item = index.internalPointer()
         return item.data(index.column(), role)
 
-    def headerData(self, section, orientation, role):
-        """
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        """Set the data of the given index to value
 
-        :param section:
-        :type section:
-        :param orientation:
-        :type orientation:
-        :param role:
-        :type role:
-        :returns: None
-        :rtype: None
+        :param index: the index to set
+        :type index: :class:`QtCore.QModelIndex`
+        :param value: the value to set
+        :param role: the role, usually edit role
+        :type role: :data:`QtCore.Qt.ItemDataRole`
+        :returns: True, if successfull, False if unsuccessfull
+        :rtype: :class:`bool`
+        :raises: None
+        """
+        if not index.isValid():
+            return False
+        item = index.internalPointer()
+        r = item.set_data(index.column(), value, role)
+        if r:
+            self.dataChanged.emit(index, index)
+        return r
+
+    def headerData(self, section, orientation, role):
+        """Return the header data
+
+        Will call :meth:`TreeItem.data` of the root :class:`TreeItem` with the
+        given section (column) and role for horizontal orientations.
+
+        Vertical orientations are numbered.
+
+        :param section: the section in the header view
+        :type section: int
+        :param orientation: vertical or horizontal orientation
+        :type orientation: :data:`QtCore.Qt.Vertical` | :data:`QtCore.Qt.Horizontal`
+        :param role: the data role.
+        :type role: :data:`QtCore.Qt.ItemDataRole`
+        :returns: data for the header
         :raises: None
         """
         if orientation == QtCore.Qt.Horizontal:
@@ -390,7 +593,7 @@ class TreeModel(QtCore.QAbstractItemModel):
             return str(section+1)
 
     def insertRow(self, row, item, parent):
-        """Inserts a single item before the given row in the child items of the parent specified.
+        """Insert a single item before the given row in the child items of the parent specified.
 
         :param row: the index where the rows get inserted
         :type row: int
@@ -398,17 +601,44 @@ class TreeModel(QtCore.QAbstractItemModel):
                      If not it will defeat the purpose of this function.
         :type item: :class:`TreeItem`
         :param parent: the parent
-        :type parent: class:`QtCore.QModelIndex`
+        :type parent: :class:`QtCore.QModelIndex`
         :returns: Returns true if the row is inserted; otherwise returns false.
         :rtype: bool
         :raises: None
         """
-        parentitem = parent.internalPointer()
+        item.set_model(self)
+        if parent.isValid():
+            parentitem = parent.internalPointer()
+        else:
+            parentitem = self._root
         self.beginInsertRows(parent, row, row)
         item._parent = parentitem
-        parentitem.childItems.insert(row, item)
+        if parentitem:
+            parentitem.childItems.insert(row, item)
         self.endInsertRows()
-        # self.insertRows(len(parentitem.childItems), 1, parent)
+        return True
+
+    def removeRow(self, row, parent):
+        """Remove row from parent
+
+        :param row: the row index
+        :type row: int
+        :param parent: the parent index
+        :type parent: :class:`QtCore.QModelIndex`
+        :returns: True if row is inserted; otherwise returns false.
+        :rtype: bool
+        :raises: None
+        """
+        if parent.isValid():
+            parentitem = parent.internalPointer()
+        else:
+            parentitem = self._root
+        self.beginRemoveRows(parent, row, row)
+        item = parentitem.childItems[row]
+        item.set_model(None)
+        item._parent = None
+        del parentitem.childItems[row]
+        self.endRemoveRows()
         return True
 
     @property
@@ -422,16 +652,55 @@ class TreeModel(QtCore.QAbstractItemModel):
         return self._root
 
     def flags(self, index):
-        """
+        """Return the flags for the given index
 
-        :param index:
-        :type index:
+        This will call :meth:`TreeItem.flags` for valid ones.
+
+        :param index: the index to query
+        :type index: :class:`QtCore.QModelIndex`
         :returns: None
         :rtype: None
         :raises: None
         """
         if index.isValid():
             item = index.internalPointer()
-            return item.flags()
+            return item.flags(index)
         else:
             super(TreeModel, self).flags(index)
+
+    def index_of_item(self, item):
+        """Get the index for the given TreeItem
+
+        :param item: the treeitem to query
+        :type item: :class:`TreeItem`
+        :returns: the index of the item
+        :rtype: :class:`QtCore.QModelIndex`
+        :raises: ValueError
+        """
+        # root has an invalid index
+        if item == self._root:
+            return QtCore.QModelIndex()
+        # find all parents to get their index
+        parents = [item]
+        i = item
+        while True:
+            parent = i.parent()
+            # break if parent is root because we got all parents we need
+            if parent == self._root:
+                break
+            if parent is None:
+                # No new parent but last parent wasn't root!
+                # This means that the item was not in the model!
+                return QtCore.QModelIndex()
+            # a new parent was found and we are still not at root
+            # search further until we get to root
+            i = parent
+            parents.append(parent)
+
+        # get the parent indexes until
+        index = QtCore.QModelIndex()
+        for treeitem in reversed(parents):
+            parent = treeitem.parent()
+            row = parent.childItems.index(treeitem)
+            index = self.index(row, 0, index)
+        return index

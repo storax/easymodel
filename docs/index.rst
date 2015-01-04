@@ -15,7 +15,6 @@ Contents:
    :maxdepth: 2
 
    installation
-   usage
    userdoc/index
    devdoc/index
    reference
