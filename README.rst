@@ -26,7 +26,7 @@ Qt Models and Views made easy with general purpose Model and a Widget delegate.
 Documentation
 -------------
 
-The full documentation is at http://easymodel.rtfd.org.
+The full documentation is at http://pythonhosted.org/easymodel.
 
 
 Features
