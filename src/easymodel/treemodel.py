@@ -273,6 +273,7 @@ class TreeItem(object):
             parentindex = self._model.index_of_item(self)
             self._model.insertRow(row, child, parentindex)
         else:
+            child._parent = self
             self.childItems.append(child)
 
     def remove_child(self, child):
