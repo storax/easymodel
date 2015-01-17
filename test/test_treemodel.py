@@ -50,7 +50,7 @@ def test_listdata_column_count(fixture, expected, listdatas):
     (1, 4, DR, 5),
     (1, 5, DR, 6),
     (2, 0, DR, 'a'),
-    (2, 1, DR, 'None'),
+    (2, 1, DR, None),
     (2, 2, DR, 'False'),
     (2, 3, DR, 1),
     (2, 4, DR, '[1, \'2\']'),
@@ -67,7 +67,7 @@ def test_listdata_data(fixture, column, role, expected, listdatas):
 
 
 def test_internal_data(str_list_data):
-    assert str_list_data.internal_data() == ['a', 'b', 'Hallo']
+    assert str_list_data.internal_data() == ['a', 'b', 'hallo']
 
 
 @pytest.fixture(scope='module')
@@ -96,7 +96,7 @@ def stubitemdata1():
     return StubItemData1
 
 
-@pytest.fixture(scope='module'):
+@pytest.fixture(scope='module')
 def stubitemdata2():
     """Stub item data
 
@@ -123,7 +123,7 @@ def stubitemdata2():
 
 
 @pytest.fixture(scope='function')
-def stub_tree(self, stubitemdata1, stubitemdata2):
+def stub_tree(stubitemdata1, stubitemdata2):
     """Simple :class:`treemodel.TreeItem` tree.
 
     :root: TreeItem(None)
@@ -155,7 +155,7 @@ def test_treeitem_child(stub_tree):
     (2, 1),
     (3, 0)])
 def test_treeitem_child_count(item, expected, stub_tree):
-    assert stub_tree[item] == expected
+    assert stub_tree[item].child_count() == expected
 
 
 @pytest.mark.parametrize("item,expected", [
@@ -164,7 +164,7 @@ def test_treeitem_child_count(item, expected, stub_tree):
     (2, 1),
     (3, 0)])
 def test_treeitem_row(item, expected, stub_tree):
-    assert stub_tree[item] == expected
+    assert stub_tree[item].row() == expected
 
 
 @pytest.mark.parametrize("item,expected", [
@@ -173,7 +173,7 @@ def test_treeitem_row(item, expected, stub_tree):
     (2, 1),
     (3, 1)])
 def test_treeitem_column_count(item, expected, stub_tree):
-    assert stub_tree[item] == expected
+    assert stub_tree[item].column_count() == expected
 
 
 @pytest.mark.parametrize("item,column,role,expected", [
@@ -184,9 +184,9 @@ def test_treeitem_column_count(item, expected, stub_tree):
     (2, 0, DR, "Data2"),
     (2, 1, DR, "Data3"),
     (3, 0, DR, "Data1"),
-    (3, 1, DR, None),
+    (3, 1, DR, "Data1"),
 ])
-def test_treeitem_column_count(item, column, role, expected, stub_tree):
+def test_treeitem_data(item, column, role, expected, stub_tree):
     data = stub_tree[item].data(column, role)
     if expected is None:
         assert data is expected
@@ -201,18 +201,21 @@ def test_treeitem_column_count(item, column, role, expected, stub_tree):
     (3, 2)])
 def test_treeitem_parent(item, expected, stub_tree):
     parent = stub_tree[item].parent()
-    assert parent is stub_tree[expected]
+    if expected is None:
+        assert parent is expected
+    else:
+        assert parent is stub_tree[expected]
 
 
 def test_treeitem_itemdata(stub_tree):
-    assert stub_tree[1].itdata1 is stub_tree[4]
+    assert stub_tree[1].itemdata() is stub_tree[4]
 
 
 def test_treeitem_internal_data(stub_tree):
-    for i in stub_tree[:-1]:
+    for i in stub_tree[1:-1]:
         assert i.internal_data() is None
     l = [1, 2, 3]
-    data = ListItemData(l)
+    data = treemodel.ListItemData(l)
     assert treemodel.TreeItem(data).internal_data() is l
 
 
@@ -221,7 +224,151 @@ def test_treeitem_set_data(new, stubitemdata1):
     itdata = stubitemdata1()
     ti = treemodel.TreeItem(itdata,)
     ti.set_data(0, new, DR)
-    assert ti.data(0, DR) == nd
+    assert ti.data(0, DR) == new
+
+
+@pytest.fixture(scope='function')
+def stub_model(stubitemdata1, stubitemdata2):
+    """Tree model. Returns (m, root, c1, c2, c3, c4, c5)
+
+    :m: the model
+    :root: TreeItem(None)
+    :c1: TreeItem(stubitemdata2(), root)
+    :c2: TreeItem(stubitemdata2(), root)
+    :c3: TreeItem(stubitemdata1(), c2)
+    :c4: TreeItem(stubitemdata1(), c2)
+    :c5: TreeItem(stubitemdata1(), c4)
+    """
+    root = treemodel.TreeItem(None)
+    m = treemodel.TreeModel(root)
+    c1 = treemodel.TreeItem(stubitemdata2(), root)
+    c2 = treemodel.TreeItem(stubitemdata2(), root)
+    c3 = treemodel.TreeItem(stubitemdata1(), c2)
+    c4 = treemodel.TreeItem(stubitemdata1(), c2)
+    c5 = treemodel.TreeItem(stubitemdata1(), c4)
+    return (m, root, c1, c2, c3, c4, c5)
+
+
+@pytest.fixture(scope='function')
+def stub_model_indexes(stub_model):
+    """Indexes for stub model. Returns (c1i, c12i, c2i, c22i, c3i, c4i, c5i, invalid)
+
+    :c1i: m.index(0, 0 , QtCore.QModelIndex())
+    :c12i: m.index(0, 1 , QtCore.QModelIndex())
+    :c2i: m.index(1, 0, QtCore.QModelIndex())
+    :c22i: m.index(1, 1, QtCore.QModelIndex())
+    :c3i: m.index(0, 0, c2i)
+    :c4i: m.index(1, 0, c2i)
+    :c5i: m.index(0, 0, c4i)
+    :invalid: m.index(-1, 0)
+    """
+    m, root, c1, c2, c3, c4, c5 = stub_model
+    c1i = m.index(0, 0 , QtCore.QModelIndex())
+    c2i = m.index(1, 0, QtCore.QModelIndex())
+    c12i = m.index(0, 1 , QtCore.QModelIndex())
+    c22i = m.index(1, 1, QtCore.QModelIndex())
+    c3i = m.index(0, 0, c2i)
+    c4i = m.index(1, 0, c2i)
+    c5i = m.index(0, 0, c4i)
+    invalid = m.index(-1, 0)
+    return (c1i, c12i, c2i, c22i, c3i, c4i, c5i, invalid)
+
+
+def test_model_index(stub_model, stub_model_indexes):
+    m, root, c1, c2, c3, c4, c5 = stub_model
+    ptrs = [c1, c1, c2, c2, c3, c4, c5, None]
+    for i, ptr in zip(stub_model_indexes, ptrs):
+        assert i.internalPointer() is ptr
+
+
+@pytest.mark.parametrize("item,expected", [
+    (0, 7),
+    (1, 7),
+    (2, 7),
+    (3, 7),
+    (4, 2),
+    (5, 2),
+    (6, 5),
+    (7, 7)])
+def test_model_parent(item, expected, stub_model, stub_model_indexes):
+    m = stub_model[0]
+    assert m.parent(stub_model_indexes[item]) == stub_model_indexes[expected]
+
+
+@pytest.mark.parametrize("item,rc", [
+    (0, 0),
+    (1, 0),
+    (2, 2),
+    (3, 0),
+    (4, 0),
+    (5, 1),
+    (6, 0),
+    (7, 2)])
+def test_model_rowcount(item, rc, stub_model, stub_model_indexes):
+    m = stub_model[0]
+    assert m.rowCount(stub_model_indexes[item]) == rc
+
+
+@pytest.mark.parametrize("item,cc", [
+    (0, 2),
+    (1, 2),
+    (2, 1),
+    (3, 1),
+    (4, 1),
+    (5, 1),
+    (6, 1),
+    (7, 2)])
+def test_column_count(item, cc, stub_model, stub_model_indexes):
+    m = stub_model[0]
+    assert m.columnCount(stub_model_indexes[item]) == cc
+
+
+@pytest.mark.parametrize("item,role,expected", [
+    (0, DR, 'Data2'),
+    (1, DR, 'Data3'),
+    (2, DR, 'Data2'),
+    (3, DR, 'Data3'),
+    (4, DR, 'Data1'),
+    (5, DR, 'Data1'),
+    (6, DR, 'Data1'),
+    (7, DR, None)])
+def test_model_data(item, role, expected, stub_model, stub_model_indexes):
+    data = stub_model[0].data(stub_model_indexes[item], role)
+    if expected is None:
+        assert data is expected
+    else:
+        assert data == expected
+
+
+@pytest.mark.parametrize("item,role,new", [
+    (4, DR, "new"),
+    (5, DR, "hello"),
+    (6, DR, "YAY"),
+])
+def test_model_set_data(item, role, new, stub_model, stub_model_indexes):
+    m = stub_model[0]
+    i = stub_model_indexes[item]
+    m.setData(i, new, role)
+    assert m.data(i, role) == new
+
+
+def test_model_headerdata(stub_model):
+    m = stub_model[0]
+    for i in range(10):
+        assert m.headerData(i, QtCore.Qt.Horizontal, DR) == str(i+1)
+        assert m.headerData(i, QtCore.Qt.Vertical, DR) == str(i+1)
+
+    rootdata = treemodel.ListItemData(['Sec1', 'Head2', 'Chap3'])
+    root = treemodel.TreeItem(rootdata)
+    m2 = treemodel.TreeModel(root)
+
+    assert m2.headerData(0, QtCore.Qt.Horizontal, DR) == 'Sec1'
+    assert m2.headerData(1, QtCore.Qt.Horizontal, DR) == 'Head2'
+    assert m2.headerData(2, QtCore.Qt.Horizontal, DR) == 'Chap3'
+    assert m2.headerData(3, QtCore.Qt.Horizontal, DR) == '4'
+    assert m2.headerData(99, QtCore.Qt.Horizontal, DR) == '100'
+    assert m2.headerData(3, QtCore.Qt.Vertical, DR) == '4'
+    assert m2.headerData(99, QtCore.Qt.Vertical, DR) == '100'
 
 
 class Test_TreeModel():
@@ -296,7 +443,6 @@ class Test_TreeModel():
         nd = "New Data"
         self.m.setData(c5i, nd, DR)
         assert self.m.data(c5i, DR) == nd
-
 
     def test_headerdata(self):
         assert self.m.headerData(0, QtCore.Qt.Horizontal, DR) == '1'
