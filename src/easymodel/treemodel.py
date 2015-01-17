@@ -403,7 +403,11 @@ class TreeItem(object):
         """
         if not self._data or column >= self._data.column_count():
             return False
-        return self._data.set_data(column, value, role)
+        r = self._data.set_data(column, value, role)
+        index = self.to_index(column)
+        if r and self._model:
+            self._model.dataChanged.emit(index, index)
+        return r
 
     def parent(self, ):
         """Return the parent tree item
@@ -463,14 +467,14 @@ class TreeItem(object):
         """
         return self._data.flags(index.column())
 
-    def to_index(self, ):
+    def to_index(self, column=0):
         """Return the index for this tree item in the model
 
         :returns: The index in the model or None, if there is no model
         :rtype: :class:`QtCore.QModelIndex`
         :raises: None
         """
-        return self._model.index_of_item(self) if self._model else None
+        return self._model.index_of_item(self, column=column) if self._model else None
 
 
 class TreeModel(QtCore.QAbstractItemModel):
@@ -612,8 +616,6 @@ class TreeModel(QtCore.QAbstractItemModel):
             return False
         item = index.internalPointer()
         r = item.set_data(index.column(), value, role)
-        if r:
-            self.dataChanged.emit(index, index)
         return r
 
     def headerData(self, section, orientation, role):
@@ -717,11 +719,13 @@ class TreeModel(QtCore.QAbstractItemModel):
         else:
             super(TreeModel, self).flags(index)
 
-    def index_of_item(self, item):
+    def index_of_item(self, item, column=0):
         """Get the index for the given TreeItem
 
         :param item: the treeitem to query
         :type item: :class:`TreeItem`
+        :param column: the column of the index
+        :type column: :class:`int`
         :returns: the index of the item
         :rtype: :class:`QtCore.QModelIndex`
         :raises: ValueError
@@ -730,7 +734,7 @@ class TreeModel(QtCore.QAbstractItemModel):
         if item == self._root:
             return QtCore.QModelIndex()
         # find all parents to get their index
-        parents = [item]
+        parents = []
         i = item
         while True:
             parent = i.parent()
@@ -752,4 +756,7 @@ class TreeModel(QtCore.QAbstractItemModel):
             parent = treeitem.parent()
             row = parent.childItems.index(treeitem)
             index = self.index(row, 0, index)
+        parent = item.parent()
+        row = parent.childItems.index(item)
+        index = self.index(row, column, index)
         return index

@@ -497,5 +497,5 @@ def test_model_remove(stub_model, stub_model_indexes):
 
     c1.set_parent(None)
     assert c1._parent is None
-    assert c1._model is None
+    assert c1.get_model() is None
     assert root.childItems == []
