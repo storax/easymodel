@@ -15,6 +15,7 @@ Finally create a tree model instance with the root tree item.
 """
 
 import abc
+import types
 
 from PySide import QtCore
 
@@ -134,7 +135,11 @@ class ListItemData(ItemData):
         """
         if role == QtCore.Qt.DisplayRole:
             if column >= 0 and column < len(self._list):
-                return str(self._list[column])
+                data = self._list[column]
+                if type(data) in (types.IntType, types.FloatType, types.NoneType):
+                    return data
+                else:
+                    return str(data)
 
     def set_data(self, column, value, role):
         """Set the data for the given column to value
@@ -268,6 +273,7 @@ class TreeItem(object):
             parentindex = self._model.index_of_item(self)
             self._model.insertRow(row, child, parentindex)
         else:
+            child._parent = self
             self.childItems.append(child)
 
     def remove_child(self, child):
