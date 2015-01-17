@@ -99,6 +99,27 @@ class ItemData(object):
         """
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
+    def to_item(self, *args, **kwargs):
+        """Create and return a new :class:`TreeItem` out of this
+        instance.
+
+        All arguments and keyword arguments passed to this function
+        are used in :meth:`TreeItem.__init__`. The first argument will
+        always be this instance (self).
+
+        :param args: the positional arguments for the TreeItem, the
+                     itemdata instance (self) will always be the
+                     prepended
+        :param kwargs: Keyword arguments. Do not use ``data`` because
+                       it is already used by this function.
+        :returns: the created item
+        :rtype: :class:`TreeItem`
+        :raises: None
+        """
+        if "data" in kwargs:
+            del kwargs["data"]
+        return TreeItem(self, *args, **kwargs)
+
 
 class ListItemData(ItemData):
     """Item data for generic lists
@@ -133,13 +154,14 @@ class ListItemData(ItemData):
         :rtype: depending on the role or None
         :raises: None
         """
+        if not (column >= 0 and column < len(self._list)):
+            return
         if role == QtCore.Qt.DisplayRole:
-            if column >= 0 and column < len(self._list):
-                data = self._list[column]
-                if type(data) in (types.IntType, types.FloatType, types.NoneType):
-                    return data
-                else:
-                    return str(data)
+            data = self._list[column]
+            if type(data) in (types.IntType, types.FloatType, types.NoneType):
+                return data
+            else:
+                return str(data)
 
     def set_data(self, column, value, role):
         """Set the data for the given column to value
@@ -155,6 +177,8 @@ class ListItemData(ItemData):
         :rtype: :class:`bool`
         :raises: None
         """
+        if not (column >= 0 and column < len(self._list)):
+            return False
         if role == QtCore.Qt.EditRole or role == QtCore.Qt.DisplayRole:
             self._list[column] = value
             return True
@@ -481,11 +505,8 @@ class TreeModel(QtCore.QAbstractItemModel):
         else:
             parentItem = self._root
 
-        try:
-            childItem = parentItem.child(row)
-            return self.createIndex(row, column, childItem)
-        except IndexError:
-            return QtCore.QModelIndex()
+        childItem = parentItem.child(row)
+        return self.createIndex(row, column, childItem)
 
     def parent(self, index):
         """Return the parent of the model item with the given index.

@@ -66,6 +66,39 @@ def test_listdata_data(fixture, column, role, expected, listdatas):
         assert data == expected
 
 
+@pytest.mark.parametrize("fixture,column,role,new", [
+    (0, 0, DR, 'A'),
+    (0, 1, DR, 'B'),
+    (0, 2, DR, 'Cya'),
+    (1, 0, DR, 10),
+    (1, 1, DR, 0),
+    (1, 2, DR, 99),
+    (2, 0, DR, None),
+    (2, 1, DR, 'Yoooo'),
+    (0, -1, DR, None),
+    (0, 3, DR, None),
+    (0, 99, DR, None),
+])
+def test_listdata_setdata(fixture, column, role, new, listdatas):
+    listdatas[fixture].set_data(column, new, role)
+    assert listdatas[fixture].data(column, role) == new
+
+
+def test_listdata_set_data_false_role():
+    data = treemodel.ListItemData(['1', 2], editable=True)
+    assert data.set_data(0, 0, QtCore.Qt.DecorationRole) is False
+    assert data.set_data(0, 'a', QtCore.Qt.DecorationRole) is False
+
+
+def test_listdata_flags():
+    e = treemodel.ListItemData(list(range(3)), editable=True)
+    s = treemodel.ListItemData(list(range(3)), editable=False)
+    default = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+    for i in range(3):
+        assert e.flags(i) == default | QtCore.Qt.ItemIsEditable
+        assert s.flags(i) == default
+
+
 def test_internal_data(str_list_data):
     assert str_list_data.internal_data() == ['a', 'b', 'hallo']
 
@@ -120,6 +153,12 @@ def stubitemdata2():
             return 99
 
     return StubItemData2
+
+
+def test_itemdata_default_setdata(stubitemdata2):
+    data = stubitemdata2()
+    assert data.set_data(0, 1, DR) is False
+    assert data.set_data(0, 'a', DR) is False
 
 
 @pytest.fixture(scope='function')
@@ -274,11 +313,16 @@ def stub_model_indexes(stub_model):
     return (c1i, c12i, c2i, c22i, c3i, c4i, c5i, invalid)
 
 
+def test_root(stub_model):
+    assert stub_model[0].root is stub_model[1]
+
+
 def test_model_index(stub_model, stub_model_indexes):
     m, root, c1, c2, c3, c4, c5 = stub_model
     ptrs = [c1, c1, c2, c2, c3, c4, c5, None]
     for i, ptr in zip(stub_model_indexes, ptrs):
         assert i.internalPointer() is ptr
+    assert not m.index(10, 0, QtCore.QModelIndex()).isValid()
 
 
 @pytest.mark.parametrize("item,expected", [
@@ -398,13 +442,13 @@ def test_model_insertrow(stubitemdata1, stub_model, stub_model_indexes):
         assert parent.internalPointer().childItems[r] is i
         assert m.index(r, 0, parent).internalPointer() is i
 
-    newi = treemodel.TreeItem(stubitemdata1)
-    newi2 = treemodel.TreeItem(stubitemdata1, newi)
-    newi3 = treemodel.TreeItem(stubitemdata1)
+    newi = stubitemdata1().to_item()
+    newi2 = stubitemdata1().to_item(newi)
+    newi3 = stubitemdata1().to_item()
     newi2.add_child(newi3)
     assert newi3._parent is newi2
     assert newi2.childItems[0] is newi3
-    i.add_child(newi)
+    newi.set_parent(i)
     assert newi._model is m
     assert newi2._model is m
     assert newi._parent is i
@@ -437,3 +481,8 @@ def test_model_remove(stub_model, stub_model_indexes):
     assert c2._model is None
     assert c3._model is None
     assert c4._model is None
+
+    c1.set_parent(None)
+    assert c1._parent is None
+    assert c1._model is None
+    assert root.childItems == []
