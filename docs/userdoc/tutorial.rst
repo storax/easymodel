@@ -60,8 +60,8 @@ Wrap the data in items::
   # or add it later
   item2 = TreeItem(data2)
   item2.set_parent(rootitem)
-  # create hierarchies
-  item3 = TreeItem(data3, item2)
+  # use the builtin to_item method
+  item3 = data3.to_item(item2)
 
 The tree items will automatically update the model. No need to emit any signals or call further methods.
 
@@ -303,7 +303,9 @@ data/item and parent it under the current index::
           currentindex = self.view.currentIndex()
           if currentindex.isValid():
               # items are stored in the internal pointer
-              pitem = currentindex.internalPointer()
+	      # but if you use a proxy model this might not work
+	      # user the TREEITEM_ROLE instead
+              pitem = currentindex.data(treemodel.TREEITEM_ROLE)
 	  else:
               # nothing selected. Take root as parent
               pitem = self.view.model().root
@@ -482,7 +484,9 @@ Everything put together::
           currentindex = self.view.currentIndex()
           if currentindex.isValid():
               # items are stored in the internal pointer
-              pitem = currentindex.internalPointer()
+	      # but if you use a proxy model this might not work
+	      # user the TREEITEM_ROLE instead
+              pitem = currentindex.data(treemodel.TREEITEM_ROLE)
           else:
               # nothing selected. Take root as parent
               pitem = self.view.model().root
