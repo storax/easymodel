@@ -20,6 +20,15 @@ import types
 from PySide import QtCore
 
 
+INTERNAL_OBJ_ROLE = QtCore.Qt.UserRole
+""":data:`QtCore.Qt.ItemDataRole` to retrieve the object stored by the item data.
+Can be used on any column. See: :meth:`ItemData.internal_data`.
+"""
+TREEITEM_ROLE = QtCore.Qt.UserRole + 1
+""":data:`QtCore.Qt.ItemDataRole` to retrieve the TreeItem index.
+Can be used on any column."""
+
+
 class ItemData(object):
     """An abstract class that holds data and is used as an interface for TreeItems
 
@@ -373,6 +382,10 @@ class TreeItem(object):
         :rtype:
         :raises: None
         """
+        if role == TREEITEM_ROLE:
+            return self
+        if role == INTERNAL_OBJ_ROLE and self._data is not None:
+            return self.internal_data()
         if self._data is not None and (column >= 0 or column < self._data.column_count()):
             return self._data.data(column, role)
 
@@ -449,6 +462,15 @@ class TreeItem(object):
         :raises: None
         """
         return self._data.flags(index.column())
+
+    def to_index(self, ):
+        """Return the index for this tree item in the model
+
+        :returns: The index in the model or None, if there is no model
+        :rtype: :class:`QtCore.QModelIndex`
+        :raises: None
+        """
+        return self._model.index_of_item(self) if self._model else None
 
 
 class TreeModel(QtCore.QAbstractItemModel):

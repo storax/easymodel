@@ -233,6 +233,18 @@ def test_treeitem_data(item, column, role, expected, stub_tree):
         assert data == expected
 
 
+def test_treeitem_userroles(stub_tree):
+    items = stub_tree[0:-1]
+    for i in items:
+        for c in range(-2, 4):
+            assert i.data(c, treemodel.TREEITEM_ROLE) is i
+            idata = i.data(c, treemodel.INTERNAL_OBJ_ROLE)
+            if i._data is not None:
+                 assert idata is i.internal_data()
+            else:
+                assert idata is None
+
+
 @pytest.mark.parametrize("item,expected", [
     (0, None),
     (1, 0),
@@ -442,7 +454,8 @@ def test_model_insertrow(stubitemdata1, stub_model, stub_model_indexes):
         assert parent.internalPointer().childItems[r] is i
         assert m.index(r, 0, parent).internalPointer() is i
 
-    newi = stubitemdata1().to_item()
+    newidata = stubitemdata1()
+    newi = newidata.to_item(data=newidata)
     newi2 = stubitemdata1().to_item(newi)
     newi3 = stubitemdata1().to_item()
     newi2.add_child(newi3)
