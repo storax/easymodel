@@ -1,3 +1,5 @@
+import pytest
+
 from PySide import QtCore
 
 from easymodel import treemodel
@@ -5,129 +7,221 @@ from easymodel import treemodel
 DR = QtCore.Qt.DisplayRole
 
 
-class Test_ListItemData():
-
-    @classmethod
-    def setup_class(cls):
-        cls.strlist = ['a', 'b', 'hallo']
-        cls.intlist = [1, 2, 3, 4, 5, 6]
-        cls.mixedlist = ['a', None, False, 1, [1, '2']]
-        cls.slistdata = treemodel.ListItemData(cls.strlist)
-        cls.ilistdata = treemodel.ListItemData(cls.intlist)
-        cls.mixeddata = treemodel.ListItemData(cls.mixedlist)
-
-    def test_column_count(self):
-        assert self.slistdata.column_count() == 3
-        assert self.ilistdata.column_count() == 6
-        assert self.mixeddata.column_count() == 5
-
-    def test_data(self):
-        assert self.slistdata.data(0, DR) == 'a'
-        assert self.slistdata.data(1, DR) == 'b'
-        assert self.slistdata.data(2, DR) == 'hallo'
-        assert self.ilistdata.data(0, DR) == '1'
-        assert self.ilistdata.data(1, DR) == '2'
-        assert self.ilistdata.data(2, DR) == '3'
-        assert self.ilistdata.data(3, DR) == '4'
-        assert self.mixeddata.data(0, DR) == 'a'
-        assert self.mixeddata.data(1, DR) == 'None'
-        assert self.mixeddata.data(2, DR) == 'False'
-        assert self.mixeddata.data(3, DR) == '1'
-        assert self.mixeddata.data(4, DR) == '[1, \'2\']'
-        assert self.slistdata.data(-1, DR) is None
-        assert self.slistdata.data(3, DR) is None
-        assert self.slistdata.data(99, DR) is None
-        assert self.slistdata.internal_data() is self.strlist
+@pytest.fixture(scope='function')
+def str_list_data():
+    """Item data with a string list. ['a', 'b', 'hallo']"""
+    return treemodel.ListItemData(['a', 'b', 'hallo'])
 
 
-# stub test data
-class StubItemData1(treemodel.ItemData):
-    def __init__(self):
-        self.d = "Data1"
-
-    def data(self, column, role):
-        if role == DR:
-            return self.d
-
-    def set_data(self, column, value, role):
-        if role == DR:
-            self.d = value
-
-    def column_count(self):
-        return 1
+@pytest.fixture(scope='function')
+def int_list_data():
+    """Item data with an in list. [1, 2, 3, 4, 5, 6]"""
+    return treemodel.ListItemData([1, 2, 3, 4, 5, 6])
 
 
-class StubItemData2(treemodel.ItemData):
-    def data(self, column, role):
-        if role == DR:
-            if column == 0:
-                return "Data2"
-            elif column == 1:
-                return "Data3"
-
-    def column_count(self):
-        return 2
-
-    def flags(self, index):
-        return 99
+@pytest.fixture(scope='function')
+def mix_list_data():
+    """Item data with a mixed list. ['a', None, False, 1, [1, '2']]"""
+    return treemodel.ListItemData(['a', None, False, 1, [1, '2']])
 
 
-class Test_TreeItem():
-    def setup(self):
-        self.root = treemodel.TreeItem(None)
-        self.itdata1 = StubItemData2()
-        self.c1 = treemodel.TreeItem(self.itdata1, self.root)
-        self.c2 = treemodel.TreeItem(StubItemData2(), self.root)
-        self.c3 = treemodel.TreeItem(StubItemData1(), self.c2)
+@pytest.fixture(scope='function')
+def listdatas(str_list_data, int_list_data, mix_list_data):
+    return (str_list_data, int_list_data, mix_list_data)
 
-    def test_child(self):
-        assert self.root.child(0) is self.c1
-        assert self.root.child(1) is self.c2
-        assert self.c2.child(0) is self.c3
 
-    def test_child_count(self):
-        assert self.root.child_count() == 2
-        assert self.c1.child_count() == 0
-        assert self.c2.child_count() == 1
+@pytest.mark.parametrize("fixture,expected", [
+    (0, 3),
+    (1, 6),
+    (2, 5),])
+def test_listdata_column_count(fixture, expected, listdatas):
+    data = listdatas[fixture]
+    assert data.column_count() == expected
 
-    def test_row(self):
-        assert self.root.row() == 0
-        assert self.c1.row() == 0
-        assert self.c2.row() == 1
-        assert self.c3.row() == 0
 
-    def test_column_count(self):
-        assert self.root.column_count() == 2
-        assert self.c1.column_count() == 2
-        assert self.c2.column_count() == 1
-        assert self.c3.column_count() == 1
+@pytest.mark.parametrize("fixture,column,role,expected", [
+    (0, 0, DR, 'a'),
+    (0, 1, DR, 'b'),
+    (0, 2, DR, 'hallo'),
+    (1, 0, DR, 1),
+    (1, 1, DR, 2),
+    (1, 2, DR, 3),
+    (1, 3, DR, 4),
+    (1, 4, DR, 5),
+    (1, 5, DR, 6),
+    (2, 0, DR, 'a'),
+    (2, 1, DR, 'None'),
+    (2, 2, DR, 'False'),
+    (2, 3, DR, 1),
+    (2, 4, DR, '[1, \'2\']'),
+    (0, -1, DR, None),
+    (0, 3, DR, None),
+    (0, 99, DR, None),
+])
+def test_listdata_data(fixture, column, role, expected, listdatas):
+    data = listdatas[fixture].data(column, role)
+    if expected is None:
+        assert data is None
+    else:
+        assert data == expected
 
-    def test_data(self):
-        assert self.root.data(0, DR) is None
-        assert self.root.data(1, DR) is None
-        assert self.c1.data(0, DR) == "Data2"
-        assert self.c1.data(1, DR) == "Data3"
-        assert self.c2.data(0, DR) == "Data2"
-        assert self.c3.data(0, DR) == "Data1"
 
-    def test_parent(self):
-        assert self.root.parent() is None
-        assert self.c1.parent() is self.root
-        assert self.c2.parent() is self.root
-        assert self.c3.parent() is self.c2
+def test_internal_data(str_list_data):
+    assert str_list_data.internal_data() == ['a', 'b', 'Hallo']
 
-    def test_itemdata(self):
-        assert self.c1.itemdata() is self.itdata1
 
-    def test_internal_data(self):
-        assert self.c1.internal_data() is None
+@pytest.fixture(scope='module')
+def stubitemdata1():
+    """Stub item data
 
-    def test_set_data(self):
-        itdata = StubItemData1()
-        ti = treemodel.TreeItem(itdata,)
-        nd = "New Data"
-        ti.set_data(0, nd, DR)
-        assert ti.data(0, DR) == nd
+    Will return \"Data1\" for DisplayRole.
+    Set data can change that.
+    Column Count is 1.
+    """
+    class StubItemData1(treemodel.ItemData):
+        def __init__(self):
+            self.d = "Data1"
+
+        def data(self, column, role):
+            if role == DR:
+                return self.d
+
+        def set_data(self, column, value, role):
+            if role == DR:
+                self.d = value
+
+        def column_count(self):
+            return 1
+
+    return StubItemData1
+
+
+@pytest.fixture(scope='module'):
+def stubitemdata2():
+    """Stub item data
+
+    Will return \"Data2\" and \"Data3\" for DisplayRole
+    and column 0 / 1.
+    Column Count is 2.
+    Flags returns 99.
+    """
+    class StubItemData2(treemodel.ItemData):
+        def data(self, column, role):
+            if role == DR:
+                if column == 0:
+                    return "Data2"
+                elif column == 1:
+                    return "Data3"
+
+        def column_count(self):
+            return 2
+
+        def flags(self, index):
+            return 99
+
+    return StubItemData2
+
+
+@pytest.fixture(scope='function')
+def stub_tree(self, stubitemdata1, stubitemdata2):
+    """Simple :class:`treemodel.TreeItem` tree.
+
+    :root: TreeItem(None)
+    :itdata1: stubitemdata2
+    :c1: TreeItem(itdata1, root)
+    :c2: TreeItem(stubitemdata2, root)
+    :c3: TreeItem(stubitemdata1, c2)
+
+    :returns: (root, c1, c2, c3, itdata1)
+    """
+    root = treemodel.TreeItem(None)
+    itdata1 = stubitemdata2()
+    c1 = treemodel.TreeItem(itdata1, root)
+    c2 = treemodel.TreeItem(stubitemdata2(), root)
+    c3 = treemodel.TreeItem(stubitemdata1(), c2)
+    return (root, c1, c2, c3, itdata1,)
+
+
+def test_treeitem_child(stub_tree):
+    root, c1, c2, c3, itdata1 = stub_tree
+    assert root.child(0) is c1
+    assert root.child(1) is c2
+    assert c2.child(0) is c3
+
+
+@pytest.mark.parametrize("item,expected", [
+    (0, 2),
+    (1, 0),
+    (2, 1),
+    (3, 0)])
+def test_treeitem_child_count(item, expected, stub_tree):
+    assert stub_tree[item] == expected
+
+
+@pytest.mark.parametrize("item,expected", [
+    (0, 0),
+    (1, 0),
+    (2, 1),
+    (3, 0)])
+def test_treeitem_row(item, expected, stub_tree):
+    assert stub_tree[item] == expected
+
+
+@pytest.mark.parametrize("item,expected", [
+    (0, 2),
+    (1, 2),
+    (2, 1),
+    (3, 1)])
+def test_treeitem_column_count(item, expected, stub_tree):
+    assert stub_tree[item] == expected
+
+
+@pytest.mark.parametrize("item,column,role,expected", [
+    (0, 0, DR, None),
+    (0, 1, DR, None),
+    (1, 0, DR, "Data2"),
+    (1, 1, DR, "Data3"),
+    (2, 0, DR, "Data2"),
+    (2, 1, DR, "Data3"),
+    (3, 0, DR, "Data1"),
+    (3, 1, DR, None),
+])
+def test_treeitem_column_count(item, column, role, expected, stub_tree):
+    data = stub_tree[item].data(column, role)
+    if expected is None:
+        assert data is expected
+    else:
+        assert data == expected
+
+
+@pytest.mark.parametrize("item,expected", [
+    (0, None),
+    (1, 0),
+    (2, 0),
+    (3, 2)])
+def test_treeitem_parent(item, expected, stub_tree):
+    parent = stub_tree[item].parent()
+    assert parent is stub_tree[expected]
+
+
+def test_treeitem_itemdata(stub_tree):
+    assert stub_tree[1].itdata1 is stub_tree[4]
+
+
+def test_treeitem_internal_data(stub_tree):
+    for i in stub_tree[:-1]:
+        assert i.internal_data() is None
+    l = [1, 2, 3]
+    data = ListItemData(l)
+    assert treemodel.TreeItem(data).internal_data() is l
+
+
+@pytest.mark.parametrize("new", ["new", 1, 2, "test"])
+def test_treeitem_set_data(new, stubitemdata1):
+    itdata = stubitemdata1()
+    ti = treemodel.TreeItem(itdata,)
+    ti.set_data(0, new, DR)
+    assert ti.data(0, DR) == nd
 
 
 class Test_TreeModel():
