@@ -15,8 +15,18 @@ Finally create a tree model instance with the root tree item.
 """
 
 import abc
+import types
 
 from PySide import QtCore
+
+
+INTERNAL_OBJ_ROLE = QtCore.Qt.UserRole
+""":data:`QtCore.Qt.ItemDataRole` to retrieve the object stored by the item data.
+Can be used on any column. See: :meth:`ItemData.internal_data`.
+"""
+TREEITEM_ROLE = QtCore.Qt.UserRole + 1
+""":data:`QtCore.Qt.ItemDataRole` to retrieve the TreeItem index.
+Can be used on any column."""
 
 
 class ItemData(object):
@@ -98,6 +108,27 @@ class ItemData(object):
         """
         return QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
 
+    def to_item(self, *args, **kwargs):
+        """Create and return a new :class:`TreeItem` out of this
+        instance.
+
+        All arguments and keyword arguments passed to this function
+        are used in :meth:`TreeItem.__init__`. The first argument will
+        always be this instance (self).
+
+        :param args: the positional arguments for the TreeItem, the
+                     itemdata instance (self) will always be the
+                     prepended
+        :param kwargs: Keyword arguments. Do not use ``data`` because
+                       it is already used by this function.
+        :returns: the created item
+        :rtype: :class:`TreeItem`
+        :raises: None
+        """
+        if "data" in kwargs:
+            del kwargs["data"]
+        return TreeItem(self, *args, **kwargs)
+
 
 class ListItemData(ItemData):
     """Item data for generic lists
@@ -132,9 +163,14 @@ class ListItemData(ItemData):
         :rtype: depending on the role or None
         :raises: None
         """
+        if not (column >= 0 and column < len(self._list)):
+            return
         if role == QtCore.Qt.DisplayRole:
-            if column >= 0 and column < len(self._list):
-                return str(self._list[column])
+            data = self._list[column]
+            if type(data) in (types.IntType, types.FloatType, types.NoneType):
+                return data
+            else:
+                return str(data)
 
     def set_data(self, column, value, role):
         """Set the data for the given column to value
@@ -150,6 +186,8 @@ class ListItemData(ItemData):
         :rtype: :class:`bool`
         :raises: None
         """
+        if not (column >= 0 and column < len(self._list)):
+            return False
         if role == QtCore.Qt.EditRole or role == QtCore.Qt.DisplayRole:
             self._list[column] = value
             return True
@@ -268,6 +306,7 @@ class TreeItem(object):
             parentindex = self._model.index_of_item(self)
             self._model.insertRow(row, child, parentindex)
         else:
+            child._parent = self
             self.childItems.append(child)
 
     def remove_child(self, child):
@@ -343,6 +382,10 @@ class TreeItem(object):
         :rtype:
         :raises: None
         """
+        if role == TREEITEM_ROLE:
+            return self
+        if role == INTERNAL_OBJ_ROLE and self._data is not None:
+            return self.internal_data()
         if self._data is not None and (column >= 0 or column < self._data.column_count()):
             return self._data.data(column, role)
 
@@ -360,7 +403,11 @@ class TreeItem(object):
         """
         if not self._data or column >= self._data.column_count():
             return False
-        return self._data.set_data(column, value, role)
+        r = self._data.set_data(column, value, role)
+        index = self.to_index(column)
+        if r and self._model:
+            self._model.dataChanged.emit(index, index)
+        return r
 
     def parent(self, ):
         """Return the parent tree item
@@ -420,6 +467,15 @@ class TreeItem(object):
         """
         return self._data.flags(index.column())
 
+    def to_index(self, column=0):
+        """Return the index for this tree item in the model
+
+        :returns: The index in the model or None, if there is no model
+        :rtype: :class:`QtCore.QModelIndex`
+        :raises: None
+        """
+        return self._model.index_of_item(self, column=column) if self._model else None
+
 
 class TreeModel(QtCore.QAbstractItemModel):
     """A tree model that uses the :class:`TreeItem` to represent a general tree.
@@ -475,11 +531,8 @@ class TreeModel(QtCore.QAbstractItemModel):
         else:
             parentItem = self._root
 
-        try:
-            childItem = parentItem.child(row)
-            return self.createIndex(row, column, childItem)
-        except IndexError:
-            return QtCore.QModelIndex()
+        childItem = parentItem.child(row)
+        return self.createIndex(row, column, childItem)
 
     def parent(self, index):
         """Return the parent of the model item with the given index.
@@ -563,8 +616,6 @@ class TreeModel(QtCore.QAbstractItemModel):
             return False
         item = index.internalPointer()
         r = item.set_data(index.column(), value, role)
-        if r:
-            self.dataChanged.emit(index, index)
         return r
 
     def headerData(self, section, orientation, role):
@@ -668,11 +719,13 @@ class TreeModel(QtCore.QAbstractItemModel):
         else:
             super(TreeModel, self).flags(index)
 
-    def index_of_item(self, item):
+    def index_of_item(self, item, column=0):
         """Get the index for the given TreeItem
 
         :param item: the treeitem to query
         :type item: :class:`TreeItem`
+        :param column: the column of the index
+        :type column: :class:`int`
         :returns: the index of the item
         :rtype: :class:`QtCore.QModelIndex`
         :raises: ValueError
@@ -681,7 +734,7 @@ class TreeModel(QtCore.QAbstractItemModel):
         if item == self._root:
             return QtCore.QModelIndex()
         # find all parents to get their index
-        parents = [item]
+        parents = []
         i = item
         while True:
             parent = i.parent()
@@ -703,4 +756,7 @@ class TreeModel(QtCore.QAbstractItemModel):
             parent = treeitem.parent()
             row = parent.childItems.index(treeitem)
             index = self.index(row, 0, index)
+        parent = item.parent()
+        row = parent.childItems.index(item)
+        index = self.index(row, column, index)
         return index
