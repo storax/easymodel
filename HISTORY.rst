@@ -14,3 +14,8 @@ History
 * Specialized views that handle click events and propagate them to the editor widget.
 * Easier insertion and removal of rows
 * Editing supported
+
+0.3.0 (2015-08-09)
++++++++++++++++++++++++++++++++++++++++
+
+* python 3 support
