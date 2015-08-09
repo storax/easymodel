@@ -15,7 +15,16 @@ History
 * Easier insertion and removal of rows
 * Editing supported
 
-0.3.0 (2015-08-09)
+0.3.0 (2015-02-10)
++++++++++++++++++++++++++++++++++++++++
+
+* Fix emit signal when calling set_data
+* Fix editor resizing
+* Add ItemDataRoles to retrieve the internal objects of an index
+* Easy conversion from ItemData to TreeItem
+* Emit clicks on widgetdelegate via QApplication and to the actual child widget
+
+0.4.0 (2015-08-09)
 +++++++++++++++++++++++++++++++++++++++
 
 * python 3 support

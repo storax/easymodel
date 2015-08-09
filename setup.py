@@ -40,7 +40,7 @@ with open(initfile) as fp:
     exec(fp.read(), about)
 
 long_description = read('README.rst', 'HISTORY.rst')
-install_requires = ['pyside']
+install_requires = ['PySide']
 tests_require = ['pytest']
 
 
