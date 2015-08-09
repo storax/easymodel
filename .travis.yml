@@ -2,6 +2,8 @@ language: python
 python: 2.7
 env:
   global:
+    PIP_INDEX_URL=https://storax.github.io/travis-pyside-test/simple/
+    PIP_EXTRA_INDEX_URL=https://pypi.python.org/simple
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
     - TOXENV=check
@@ -13,6 +15,10 @@ env:
     - TOXENV=3.3-nocover
     - TOXENV=3.4,coveralls
     - TOXENV=3.4-nocover
+addons:
+  apt:
+    packages:
+    - xvfb
 before_install:
   - python --version
   - virtualenv --version
@@ -20,10 +26,11 @@ before_install:
   - uname -a
   - lsb_release -a
 install:
-  - sudo apt-get install libqt4-dev
   - pip install tox
 script:
-  - tox -v -c travistox.ini
+  - Xvfb :0 -screen 0 1600x1200x24 &
+  - export DISPLAY=:0.0
+  - tox -v
 notifications:
   email:
     on_success: never
