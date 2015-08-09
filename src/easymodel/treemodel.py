@@ -15,7 +15,6 @@ Finally create a tree model instance with the root tree item.
 """
 
 import abc
-import types
 
 from PySide import QtCore
 
