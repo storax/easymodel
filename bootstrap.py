@@ -8,26 +8,9 @@ Use setup.cfg to configer your test matrix.
 Run bootstrap for each update.
 """
 import os
-import sys
 
 import jinja2
 import matrix
-
-if not os.path.exists('.tox/configure'):
-    import virtualenv
-    import subprocess
-    print("Bootstrapping ...")
-    virtualenv.create_environment('.tox/configure')
-    print("Installing `jinja2` and `matrix` into bootstrap environment ...")
-    if sys.platform == 'win32':
-        subprocess.check_call(['.tox/configure/Scripts/pip', 'install', 'jinja2', 'matrix'])
-    else:
-        subprocess.check_call(['.tox/configure/bin/pip', 'install', 'jinja2', 'matrix'])
-
-if sys.platform == 'win32':
-    execfile('.tox/configure/Scripts/activate_this.py', dict(__file__='.tox/configure/Scripts/activate_this.py'))
-else:
-    execfile('.tox/configure/bin/activate_this.py', dict(__file__='.tox/configure/bin/activate_this.py'))
 
 
 jinja = jinja2.Environment(
