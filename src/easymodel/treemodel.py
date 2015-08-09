@@ -15,7 +15,6 @@ Finally create a tree model instance with the root tree item.
 """
 
 import abc
-import types
 
 from PySide import QtCore
 
@@ -167,7 +166,9 @@ class ListItemData(ItemData):
             return
         if role == QtCore.Qt.DisplayRole:
             data = self._list[column]
-            if type(data) in (types.IntType, types.FloatType, types.NoneType):
+            if data is None\
+               or (isinstance(data, int) and not isinstance(data, bool))\
+               or isinstance(data, float):
                 return data
             else:
                 return str(data)
