@@ -167,8 +167,8 @@ class ListItemData(ItemData):
         if role == QtCore.Qt.DisplayRole:
             data = self._list[column]
             if data is None\
-                or (isinstance(data, int) and not isinstance(data, bool))\
-                or isinstance(data, float):
+               or (isinstance(data, int) and not isinstance(data, bool))\
+               or isinstance(data, float):
                 return data
             else:
                 return str(data)
