@@ -18,6 +18,9 @@ import abc
 
 from PySide import QtCore
 
+__all__ = ['INTERNAL_OBJ_ROLE', 'TREEITEM_ROLE',
+           'ItemData', 'ListItemData', 'TreeItem', 'TreeModel']
+
 
 INTERNAL_OBJ_ROLE = QtCore.Qt.UserRole
 """:data:`QtCore.Qt.ItemDataRole` to retrieve the object stored by the item data.

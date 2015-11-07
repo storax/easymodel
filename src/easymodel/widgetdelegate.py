@@ -26,6 +26,9 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+__all__ = ['WidgetDelegate', 'WidgetDelegateViewMixin',
+           'WD_AbstractItemView', 'WD_ListView', 'WD_TableView', 'WD_TreeView']
+
 
 class WidgetDelegate(QtGui.QStyledItemDelegate):
     """A delegate for drawing a arbitrary QWidget
