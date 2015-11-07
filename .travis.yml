@@ -2,35 +2,42 @@ sudo: false
 language: python
 python: 2.7
 env:
-  global:
-    PIP_INDEX_URL=https://storax.github.io/travis-pyside-test/simple/
-    PIP_EXTRA_INDEX_URL=https://pypi.python.org/simple
+  global: PIP_INDEX_URL=https://storax.github.io/travis-pyside-test/simple/ PIP_EXTRA_INDEX_URL=https://pypi.python.org/simple
     LD_PRELOAD=/lib/x86_64-linux-gnu/libSegFault.so
   matrix:
-    - TOXENV=check
-    - TOXENV=2.7,coveralls
-    - TOXENV=2.7-nocover
-    - TOXENV=3.3,coveralls
-    - TOXENV=3.3-nocover
-    - TOXENV=3.4,coveralls
-    - TOXENV=3.4-nocover
+  - TOXENV=check
+  - TOXENV=2.7,coveralls
+  - TOXENV=2.7-nocover
+  - TOXENV=3.3,coveralls
+  - TOXENV=3.3-nocover
+  - TOXENV=3.4,coveralls
+  - TOXENV=3.4-nocover
 addons:
   apt:
     packages:
     - xvfb
 before_install:
-  - python --version
-  - virtualenv --version
-  - pip --version
-  - uname -a
-  - lsb_release -a
+- python --version
+- virtualenv --version
+- pip --version
+- uname -a
+- lsb_release -a
 install:
-  - pip install tox
+- pip install tox
 script:
-  - Xvfb :0 -screen 0 1600x1200x24 &
-  - export DISPLAY=:0.0
-  - tox -v
+- Xvfb :0 -screen 0 1600x1200x24 &
+- export DISPLAY=:0.0
+- tox -v
 notifications:
   email:
     on_success: never
     on_failure: never
+deploy:
+  provider: pypi
+  user: storax
+  distributions: sdist bdist_wheel
+  on:
+    tags: true
+    repo: storax/easymodel
+  password:
+    secure: UI6CPrBkZ9G+5qZoMPmKgnlM2W5IhZjNVog79QgdXexKYFnllteVH6A3IShIsVQ9ZmO7OvdexmUR/oJSKrdjGJcutAil9prEBYrjFYWu1AwLOVPD4xVSZhxMw+/B3PPpVi06bkTcjiEyHg+/mSINthQM8jMul1fe/KFzwA9YMLM=
