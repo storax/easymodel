@@ -328,6 +328,10 @@ class WidgetDelegateViewMixin(object):
         :rtype: None
         :raises: None
         """
+        # if we are recursing because we sent a click event, and it got propagated to the parents
+        # and we recieve it again, terminate
+        if self.__recursing:
+            return
         # find index at mouse position
         i = self.index_at_event(event)
 
