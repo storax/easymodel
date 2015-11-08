@@ -172,7 +172,7 @@ class AbstractCascadeView(QtGui.QWidget):
         """
         super(AbstractCascadeView, self).__init__(parent, flags)
         self._depth = depth
-        self._levels = []
+        self.levels = []
         self._model = None
 
     @property
@@ -194,8 +194,8 @@ class AbstractCascadeView(QtGui.QWidget):
         :raises: None
         """
         self._model = model
-        if self._levels:
-            self._levels[0].set_model(model)
+        if self.levels:
+            self.levels[0].set_model(model)
 
     def build_view(self, ):
         """Creates all levels and adds them to the ui
@@ -262,8 +262,8 @@ class AbstractCascadeView(QtGui.QWidget):
         :rtype: None
         :raises: None
         """
-        if depth < len(self._levels):
-            self._levels[depth]._set_root(index)
+        if depth < len(self.levels):
+            self.levels[depth]._set_root(index)
 
     def _new_level(self, depth):
         """Create a new level and header and connect signals
@@ -278,18 +278,7 @@ class AbstractCascadeView(QtGui.QWidget):
         h = self.create_header(depth)
         self.add_lvl_to_ui(l, h)
         l.new_root.connect(partial(self.set_root, depth+1))
-        self._levels.append(l)
-
-    def get_level(self, depth):
-        """Return the level for the given depth
-
-        :param depth: the hierarchy level
-        :type depth: :class:`int`
-        :returns: the level widget
-        :rtype: :class:`AbstractLevel`
-        :raises: None
-        """
-        return self._levels[depth]
+        self.levels.append(l)
 
     @property
     def depth(self):
@@ -310,7 +299,7 @@ class AbstractCascadeView(QtGui.QWidget):
         :rtype: list of QtCore.QModelIndex
         :raises: None
         """
-        return self._levels[depth].selected_indexes()
+        return self.levels[depth].selected_indexes()
 
     def set_index(self, depth, index):
         """Set the level at the given depth to the given index
@@ -323,7 +312,7 @@ class AbstractCascadeView(QtGui.QWidget):
         :rtype: None
         :raises: None
         """
-        self._levels[depth].set_index(index)
+        self.levels[depth].set_index(index)
 
 
 class CBLevel(AbstractLevel, QtGui.QComboBox):
@@ -550,6 +539,7 @@ class ListLevel(AbstractLevel, QtGui.QListView):
             self.setCurrentIndex(self.model().index(0, 0, index))
             self.new_root.emit(self.model().index(0, 0, index))
         else:
+            self.setCurrentIndex(QtCore.QModelIndex())
             self.new_root.emit(QtCore.QModelIndex())
 
     def selected_indexes(self, ):
@@ -595,8 +585,6 @@ class ListLevel(AbstractLevel, QtGui.QListView):
     def resizeEvent(self, event):
         """Schedules an item layout if resize mode is \"adjust\". Somehow this is
         needed for correctly scaling down items.
-
-        The reason this was reimplemented was the CommentDelegate.
 
         :param event: the resize event
         :type event: QtCore.QEvent
