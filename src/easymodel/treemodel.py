@@ -642,10 +642,10 @@ class TreeModel(QtCore.QAbstractItemModel):
         if orientation == QtCore.Qt.Horizontal:
             d = self._root.data(section, role)
             if d is None and role == QtCore.Qt.DisplayRole:
-                return str(section+1)
+                return str(section + 1)
             return d
         if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-            return str(section+1)
+            return str(section + 1)
 
     def insertRow(self, row, item, parent):
         """Insert a single item before the given row in the child items of the parent specified.

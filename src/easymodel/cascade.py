@@ -277,7 +277,7 @@ class AbstractCascadeView(QtGui.QWidget):
         l = self.create_level(depth)
         h = self.create_header(depth)
         self.add_lvl_to_ui(l, h)
-        l.new_root.connect(partial(self.set_root, depth+1))
+        l.new_root.connect(partial(self.set_root, depth + 1))
         self.levels.append(l)
 
     @property
@@ -483,9 +483,9 @@ class ComboBoxCascadeView(AbstractCascadeView):
         """
         lay = self.layout()
         rc = lay.rowCount()
-        lay.addWidget(level, rc+1, 1)
+        lay.addWidget(level, rc + 1, 1)
         if header is not None:
-            lay.addWidget(header, rc+1, 0)
+            lay.addWidget(header, rc + 1, 0)
         lay.setColumnStretch(1, 1)
 
 
