@@ -431,7 +431,7 @@ class ComboBoxCascadeView(AbstractCascadeView):
         :raises: None
         """
         super(ComboBoxCascadeView, self).__init__(depth, parent, flags)
-        self._headertexts = headers
+        self._headertexts = headers or []
         self.setup_ui()
         self.build_view()
 
@@ -631,7 +631,7 @@ class ListCascadeView(AbstractCascadeView):
         :raises: None
         """
         super(ListCascadeView, self).__init__(depth, parent, flags)
-        self._headertexts = headers
+        self._headertexts = headers or []
         self.setup_ui()
         self.build_view()
 
