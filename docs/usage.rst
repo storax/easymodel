@@ -56,9 +56,9 @@ lists, so we can use :class:`easymodel.ListItemData`. First create the data::
 Wrap the data in items::
 
   # specify the parent to add it directly to the model
-  item1 = TreeItem(data1, parent=rootitem)
+  item1 = easymodel.TreeItem(data1, parent=rootitem)
   # or add it later
-  item2 = TreeItem(data2)
+  item2 = easymodel.TreeItem(data2)
   item2.set_parent(rootitem)
   # use the builtin to_item method
   item3 = data3.to_item(item2)
@@ -158,7 +158,7 @@ Sometimes you want to have arbitrary widgets in your views. ItemDelegates of Qt 
 but it is very hard to get your arbitrary widget into the view.
 
 If the widget changes a lot or you want to use the UI Designer, the regular workflow of styled item delegates is a bit flawed.
-The :class:`easymodel.widgetdelegate.Widgetdelegate` is there to help.
+The :class:`easymodel.Widgetdelegate` is there to help.
 
 Let's assume you want have a spin box and a randomize button for the altitude of your planes
 in a view. The widget might look like this::
@@ -181,17 +181,15 @@ in a view. The widget might look like this::
           v = random.randint(0, 99)
           self.value_sb.setValue(v)
 
-To create a delegate for this widget subclass :class:`easymodel.widgetdelegate.Widgetdelegate`::
+To create a delegate for this widget subclass :class:`easymodel.Widgetdelegate`::
 
-  import easymodel.widgetdelegate as widgetdelegate
-
-  class RandomSpinBoxDelegate(widgetdelegate.WidgetDelegate):
+  class RandomSpinBoxDelegate(easymodel.WidgetDelegate):
       """RandomSpinBox delegate"""
   
       def __init__(self, parent=None):
           super(RandomSpinBoxDelegate, self).__init__(parent)
 
-Implement the abstract methods. First reimplement :meth:`easymodel.widgetdelegate.Widgetdelegate.create_widget`.
+Implement the abstract methods. First reimplement :meth:`easymodel.Widgetdelegate.create_widget`.
 It is used to create the widget that will be rendered in the view::
 
     def create_widget(self, parent=None):
@@ -202,7 +200,7 @@ If your editor should look exactly the same you can reuse this function::
     def create_editor_widget(self, parent, option, index):
         return self.create_widget(parent)
 
-Now you need to implement :meth:`easymodel.widgetdelegate.Widgetdelegate.setEditorData`.
+Now you need to implement :meth:`easymodel.Widgetdelegate.setEditorData`.
 It will set the editor in the right state to represent a index in the model.
 So we take the data of the index and put it in the spinbox::
 
@@ -213,7 +211,7 @@ So we take the data of the index and put it in the spinbox::
         else:
             widget.value_sb.setValue(int(0))
 
-:meth:`easymodel.widgetdelegate.Widgetdelegate.set_widget_index` does the same for
+:meth:`easymodel.Widgetdelegate.set_widget_index` does the same for
 the widget that is rendered. Every time an index is painted, the widget has to
 be set in the right state to represent the index. Because we already did that for the editor
 we can reuse the function::
@@ -221,7 +219,7 @@ we can reuse the function::
     def set_widget_index(self, index):
         self.setEditorData(self.widget, index)
 
-Now all that is left is :meth:`easymodel.widgetdelegate.Widgetdelegate.setModelData`.
+Now all that is left is :meth:`easymodel.Widgetdelegate.setModelData`.
 Here you take the value from the editor and set the data in the model::
 
     def setModelData(self, editor, model, index):
@@ -231,9 +229,9 @@ Here you take the value from the editor and set the data in the model::
 Done! Now you can use the delegate in any view. But I recommend using
 one of the views in :mod:`easymodel.widgetdelegate`.
 
-You can either use the :class:`WidgetDelegateViewMixin` for your own views or use one
-of the premade views: :class:`WD_AbstractItemView`, :class:`WD_ListView`, :class:`WD_TableView`
-:class:`WD_TreeView`.
+You can either use the :class:`easymodel.WidgetDelegateViewMixin` for your own views or use one
+of the premade views: :class:`easymodel.WD_AbstractItemView`,
+:class:`easymodel.WD_ListView`, :class:`easymodel.WD_TableView`, :class:`easymodel.WD_TreeView`.
 
 They will make the user experience better. When the user clicks an widget delegate, it will
 be set into edit mode and the click will be propagated to the editor. That way it behaves almost
@@ -260,7 +258,7 @@ First create the widget::
           self.add_hbox = QtGui.QHBoxLayout()
   
           self.instruction_lb = QtGui.QLabel("Select Item and click add!", self)
-          self.view = widgetdelegate.WD_TreeView(self)
+          self.view = easymodel.WD_TreeView(self)
   
           self.add_pb = QtGui.QPushButton('Add')
           self.add_pb.clicked.connect(self.add_airplane)
@@ -340,7 +338,7 @@ Everything put together::
   
   from PySide import QtCore, QtGui
   
-  from easymodel import treemodel, widgetdelegate
+  import easymodel
   
   
   class Airplane(object):
@@ -409,7 +407,7 @@ Everything put together::
           self.value_sb.setValue(v)
   
   
-  class RandomSpinBoxDelegate(widgetdelegate.WidgetDelegate):
+  class RandomSpinBoxDelegate(easymodel.WidgetDelegate):
       """RandomSpinBox delegate
       """
   
@@ -444,7 +442,7 @@ Everything put together::
           self.add_hbox = QtGui.QHBoxLayout()
   
           self.instruction_lb = QtGui.QLabel("Select Item and click add!", self)
-          self.view = widgetdelegate.WD_TreeView(self)
+          self.view = easymodel.WD_TreeView(self)
   
           self.add_pb = QtGui.QPushButton('Add')
           self.add_pb.clicked.connect(self.add_airplane)
@@ -468,7 +466,7 @@ Everything put together::
           self.add_hbox.addWidget(self.altitude_sb)
   
           self.delegate1 = RandomSpinBoxDelegate()
-          #elf.view.setItemDelegateForColumn(2, self.delegate1)
+          self.view.setItemDelegateForColumn(2, self.delegate1)
   
           # Now we can build ourselves models
           # First we need a root
