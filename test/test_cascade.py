@@ -54,7 +54,7 @@ def test_cbview_initial_texts(qtbot, model, level, text):
 def test_cbview_change_nochildren(qtbot, model, level, text):
     cbview = easymodel.ComboBoxCascadeView(depth=3)
     cbview.model = model
-    cbview.levels[0].setCurrentIndex(1)
+    cbview.set_index(0, model.index(1, 0))
     assert cbview.levels[level].currentText() == text
     i = model.index(1, 0)
     assert [i] == cbview.selected_indexes(0)
@@ -67,8 +67,8 @@ def test_cbview_change_nochildren(qtbot, model, level, text):
 def test_cbview_change_firstlevel(qtbot, model, level, text):
     cbview = easymodel.ComboBoxCascadeView(depth=3)
     cbview.model = model
-    cbview.levels[0].setCurrentIndex(1)
-    cbview.levels[0].setCurrentIndex(0)
+    cbview.set_index(0, model.index(1, 0))
+    cbview.set_index(0, model.index(0, 0))
     assert cbview.levels[level].currentText() == text
 
 
@@ -102,7 +102,7 @@ def test_listview_change_nochildren(qtbot, model, level, text):
     listview = easymodel.ListCascadeView(depth=3)
     listview.model = model
     i = model.index(1, 0)
-    listview.levels[0].setCurrentIndex(i)
+    listview.set_index(0, i)
     index = listview.levels[level].currentIndex()
     assert index.data() == text
     assert [i] == listview.selected_indexes(0)
