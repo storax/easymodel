@@ -486,7 +486,7 @@ class ComboBoxCascadeView(AbstractCascadeView):
         lay.addWidget(level, rc+1, 1)
         if header is not None:
             lay.addWidget(header, rc+1, 0)
-        lay.setColumnStretch(1,1)
+        lay.setColumnStretch(1, 1)
 
 
 class ListLevel(AbstractLevel, QtGui.QListView):
@@ -530,7 +530,7 @@ class ListLevel(AbstractLevel, QtGui.QListView):
         :raises: None
         """
         if not index.isValid():
-            self.setModel(None) # so we will not see toplevel stuff
+            self.setModel(None)  # so we will not see toplevel stuff
             self.setCurrentIndex(QtCore.QModelIndex())
             self.new_root.emit(QtCore.QModelIndex())
             return
