@@ -44,8 +44,32 @@ def test_cbview_headers(qtbot, model, level):
 def test_cbview_initial_texts(qtbot, model, level, text):
     cbview = easymodel.ComboBoxCascadeView(depth=3)
     cbview.model = model
-    assert cbview._levels[level].currentText() == text,\
+    assert cbview.levels[level].currentText() == text,\
         'Combobox should show the first column of the first item of this level.'
+
+
+@pytest.mark.parametrize(
+    "level,text",
+    [(0, 'l0r1c0'), (1, ''), (2, '')])
+def test_cbview_change_nochildren(qtbot, model, level, text):
+    cbview = easymodel.ComboBoxCascadeView(depth=3)
+    cbview.model = model
+    cbview.levels[0].setCurrentIndex(1)
+    assert cbview.levels[level].currentText() == text
+    i = model.index(1, 0)
+    assert [i] == cbview.selected_indexes(0)
+    assert [model.index(0, 0, i)] == cbview.selected_indexes(1)
+
+
+@pytest.mark.parametrize(
+    "level,text",
+    [(0, 'l0r0c0'), (1, 'l1r0c0'), (2, 'l2r0c0')])
+def test_cbview_change_firstlevel(qtbot, model, level, text):
+    cbview = easymodel.ComboBoxCascadeView(depth=3)
+    cbview.model = model
+    cbview.levels[0].setCurrentIndex(1)
+    cbview.levels[0].setCurrentIndex(0)
+    assert cbview.levels[level].currentText() == text
 
 
 @pytest.mark.parametrize("level", range(3))
@@ -66,6 +90,20 @@ def test_listview_headers(qtbot, model, level):
 def test_listview_initial_texts(qtbot, model, level, text):
     cbview = easymodel.ListCascadeView(depth=3)
     cbview.model = model
-    index = cbview._levels[level].currentIndex()
+    index = cbview.levels[level].currentIndex()
     assert index.data() == text,\
         'Current index should be the first column of the first item of this level.'
+
+
+@pytest.mark.parametrize(
+    "level,text",
+    [(0, 'l0r1c0'), (1, None), (2, None)])
+def test_listview_change_nochildren(qtbot, model, level, text):
+    listview = easymodel.ListCascadeView(depth=3)
+    listview.model = model
+    i = model.index(1, 0)
+    listview.levels[0].setCurrentIndex(i)
+    index = listview.levels[level].currentIndex()
+    assert index.data() == text
+    assert [i] == listview.selected_indexes(0)
+    assert [model.index(0, 0, i)] == listview.selected_indexes(1)
