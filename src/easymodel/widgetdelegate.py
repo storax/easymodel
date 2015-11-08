@@ -161,7 +161,7 @@ class WidgetDelegate(QtGui.QStyledItemDelegate):
         :rtype: None
         :raises: None
         """
-        for k in reversed(self._edit_widgets.keys()):
+        for k in list(self._edit_widgets):
             self.commit_close_editor(k)
 
     def createEditor(self, parent, option, index):
