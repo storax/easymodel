@@ -1,5 +1,4 @@
 import pytest
-
 from PySide import QtCore, QtGui
 
 import easymodel
