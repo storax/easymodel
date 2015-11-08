@@ -42,7 +42,7 @@ tests_require = ['tox']
 
 setup(
     name='easymodel',
-    version='0.4.1',
+    version='0.5.0',
     description='Qt Models and Views made easy with general purpose Model and a Widget delegate.',
     long_description=long_description,
     author='David Zuber',

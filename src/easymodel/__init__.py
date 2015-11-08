@@ -10,4 +10,4 @@ __all__ = [treemodel.__all__ +
 
 __author__ = 'David Zuber'
 __email__ = 'zuber.david@gmx.de'
-__version__ = '0.4.1'
+__version__ = '0.5.0'
