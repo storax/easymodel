@@ -1,4 +1,4 @@
-Tutorial
+Usage
 ========
 
 Model
