@@ -734,7 +734,6 @@ class TreeModel(QtCore.QAbstractItemModel):
         :rtype: :class:`QtCore.QModelIndex`
         :raises: ValueError
         """
-        # root has an invalid index
         if item == self._root:
             return QtCore.QModelIndex()
         # find all parents to get their index
