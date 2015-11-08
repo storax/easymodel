@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from setuptools import setup
-from setuptools import find_packages
-from setuptools.command.test import test as TestCommand
+
 import io
 import os
 import sys
 
+from setuptools import find_packages, setup
+from setuptools.command.test import test as TestCommand
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -42,7 +42,7 @@ tests_require = ['tox']
 
 setup(
     name='easymodel',
-    version='0.4.1',
+    version='0.5.0',
     description='Qt Models and Views made easy with general purpose Model and a Widget delegate.',
     long_description=long_description,
     author='David Zuber',
