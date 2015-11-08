@@ -32,5 +32,6 @@ The full documentation is at http://pythonhosted.org/easymodel.
 Features
 --------
 
-* Easy to use tree model for arbitrary data
+* Easy to use tree model for arbitrary data.
 * Widgets in views via delegates.
+* Cascading views, similar to QColumnView but with arbitrary widgets (e.g. QComboBox or even a mix).

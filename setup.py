@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
-from setuptools import setup
-from setuptools import find_packages
-from setuptools.command.test import test as TestCommand
+
 import io
 import os
 import sys
 
+from setuptools import find_packages, setup
+from setuptools.command.test import test as TestCommand
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -22,42 +22,38 @@ def read(*filenames, **kwargs):
     return sep.join(buf)
 
 
-class PyTest(TestCommand):
+class Tox(TestCommand):
     def finalize_options(self):
         TestCommand.finalize_options(self)
         self.test_args = []
         self.test_suite = True
 
     def run_tests(self):
-        import pytest
-        errcode = pytest.main(self.test_args)
+        #import here, cause outside the eggs aren't loaded
+        import tox
+        errcode = tox.cmdline(self.test_args)
         sys.exit(errcode)
 
 
-about={}
-initfile = os.path.join(here, 'src', 'easymodel', '__init__.py')
-with open(initfile) as fp:
-    exec(fp.read(), about)
-
 long_description = read('README.rst', 'HISTORY.rst')
 install_requires = ['PySide']
-tests_require = ['pytest']
+tests_require = ['tox']
 
 
 setup(
     name='easymodel',
-    version=about['__version__'],
+    version='0.5.0',
     description='Qt Models and Views made easy with general purpose Model and a Widget delegate.',
     long_description=long_description,
-    author=about['__author__'],
-    author_email=about['__email__'],
+    author='David Zuber',
+    author_email='zuber.david@gmx.de',
     url='https://github.com/storax/easymodel',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     include_package_data=True,
     tests_require=tests_require,
     install_requires=install_requires,
-    cmdclass={'test': PyTest},
+    cmdclass={'test': Tox},
     license='BSD',
     zip_safe=False,
     keywords='easymodel',

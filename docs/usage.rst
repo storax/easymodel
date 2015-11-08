@@ -1,33 +1,33 @@
-Tutorial
+Usage
 ========
 
 Model
 -----
 
-The :mod:`easymodel.treemodel` module provides an simple but powerful general purpose
-treemodel. The model uses :class:`easymodel.treemodel.TreeItem` instances that act like
+The :mod:`easymodel` module provides an simple but powerful general purpose
+treemodel. The model uses :class:`easymodel.TreeItem` instances that act like
 rows.
 
-The tree item itself uses a :class:`easymodel.treemodel.ItemData` instance to provide
+The tree item itself uses a :class:`easymodel.ItemData` instance to provide
 the data. That way, the structure and logic of the whole model is encapsulated in the model and tree item classes. They take care of indexing, insertion, removal etc.
 
-As a user you only need to subclass :class:`easymodel.treemodel.ItemData` to wrap
+As a user you only need to subclass :class:`easymodel.ItemData` to wrap
 arbitrary objects. It is pretty easy.
 
-There is also a rudimentary :class:`easymodel.treemodel.ListItemData` that might be enough for simple data.
+There is also a rudimentary :class:`easymodel.ListItemData` that might be enough for simple data.
 
 Root
 ~~~~
 
 Each model needs a root item. The root item is the parent of all top level tree items that hold data. It is also responsible for the headers. So in most cases it is enough to simply use
-a :class:`easymodel.treemodel.ListItemData`::
+a :class:`easymodel.ListItemData`::
 
-  import easymodel.treemodel as treemodel
+  import easymodel
 
   headers = ['Name', 'Speed', 'Altitude']
-  rootdata = treemodel.ListItemData(headers)
+  rootdata = easymodel.ListItemData(headers)
   # roots do not have a parent
-  rootitem = treemodel.TreeItem(rootdata, parent=None)
+  rootitem = easymodel.TreeItem(rootdata, parent=None)
 
 
 Creating a simple model
@@ -37,7 +37,7 @@ There are three steps involved. Create a root item, a model and wrap the data.
 The creation of a model is simple::
 
   # use the root item from above
-  model = treemodel.TreeModel(rootitem)
+  model = easymodel.TreeModel(rootitem)
 
 Thats it. The root item might already have children. That way, you can initialize a model with data.
 
@@ -46,19 +46,19 @@ Add Items
 
 Let's assume our data consists of items with 3 values: Name, Velocity, Altitude.
 The data might describe a vehicle, like an airplane or something like that.
-Before we create our own :class:`easymodel.treemodel.ItemData` subclasses, we use simple
-lists, so we can use :class:`easymodel.treemodel.ListItemData`. First create the data::
+Before we create our own :class:`easymodel.ItemData` subclasses, we use simple
+lists, so we can use :class:`easymodel.ListItemData`. First create the data::
 
-  data1 = treemodel.ListItemData(['Cessna', 250, 2000])
-  data2 = treemodel.ListItemData(['747', 750, 6000])
-  data3 = treemodel.ListItemData(['Fuel Plane', '730', 5000])
+  data1 = easymodel.ListItemData(['Cessna', 250, 2000])
+  data2 = easymodel.ListItemData(['747', 750, 6000])
+  data3 = easymodel.ListItemData(['Fuel Plane', '730', 5000])
 
 Wrap the data in items::
 
   # specify the parent to add it directly to the model
-  item1 = TreeItem(data1, parent=rootitem)
+  item1 = easymodel.TreeItem(data1, parent=rootitem)
   # or add it later
-  item2 = TreeItem(data2)
+  item2 = easymodel.TreeItem(data2)
   item2.set_parent(rootitem)
   # use the builtin to_item method
   item3 = data3.to_item(item2)
@@ -94,9 +94,9 @@ Let's assume we have a very simple airplane class::
 Let's create a item data subclass that has three columns: Name, Speed, Altitude.
 Speed and Altitude should be editable.
 
-First subclass :class:`easymodel.treemodel.ItemData`. It can store an airplane instance.::
+First subclass :class:`easymodel.ItemData`. It can store an airplane instance.::
 
-  class AirplaneItemData(treemodel.ItemData):
+  class AirplaneItemData(easymodel.ItemData):
       """An item data object that can extract information from an airplane instance.
       """
       def __init__(self, airplane):
@@ -113,7 +113,7 @@ The column count is 3 and we can also give access to the airplane that is stored
           return self.airplane
 
 By default an item is enabled and selectable. But speed and altitude should be editable.
-So lets override :meth:`easymodel.treemodel.ItemData.flags`::
+So lets override :meth:`easymodel.ItemData.flags`::
 
       def flags(self, column):
           """Return flags for enabled and selectable. Speed and altitude are also editable."""
@@ -148,7 +148,7 @@ Now we can use this class to wrap our own airplanes and add them to a treeitem/m
   # wrap it in a data object
   planedata = AirplaneItemData(plane)
   # add it to the model
-  planeitem = treemodel.TreeItem(planedata, rootitem)
+  planeitem = easymodel.TreeItem(planedata, rootitem)
 
 
 Delegate
@@ -158,7 +158,7 @@ Sometimes you want to have arbitrary widgets in your views. ItemDelegates of Qt 
 but it is very hard to get your arbitrary widget into the view.
 
 If the widget changes a lot or you want to use the UI Designer, the regular workflow of styled item delegates is a bit flawed.
-The :class:`easymodel.widgetdelegate.Widgetdelegate` is there to help.
+The :class:`easymodel.Widgetdelegate` is there to help.
 
 Let's assume you want have a spin box and a randomize button for the altitude of your planes
 in a view. The widget might look like this::
@@ -181,17 +181,15 @@ in a view. The widget might look like this::
           v = random.randint(0, 99)
           self.value_sb.setValue(v)
 
-To create a delegate for this widget subclass :class:`easymodel.widgetdelegate.Widgetdelegate`::
+To create a delegate for this widget subclass :class:`easymodel.Widgetdelegate`::
 
-  import easymodel.widgetdelegate as widgetdelegate
-
-  class RandomSpinBoxDelegate(widgetdelegate.WidgetDelegate):
+  class RandomSpinBoxDelegate(easymodel.WidgetDelegate):
       """RandomSpinBox delegate"""
   
       def __init__(self, parent=None):
           super(RandomSpinBoxDelegate, self).__init__(parent)
 
-Implement the abstract methods. First reimplement :meth:`easymodel.widgetdelegate.Widgetdelegate.create_widget`.
+Implement the abstract methods. First reimplement :meth:`easymodel.Widgetdelegate.create_widget`.
 It is used to create the widget that will be rendered in the view::
 
     def create_widget(self, parent=None):
@@ -202,7 +200,7 @@ If your editor should look exactly the same you can reuse this function::
     def create_editor_widget(self, parent, option, index):
         return self.create_widget(parent)
 
-Now you need to implement :meth:`easymodel.widgetdelegate.Widgetdelegate.setEditorData`.
+Now you need to implement :meth:`easymodel.Widgetdelegate.setEditorData`.
 It will set the editor in the right state to represent a index in the model.
 So we take the data of the index and put it in the spinbox::
 
@@ -213,7 +211,7 @@ So we take the data of the index and put it in the spinbox::
         else:
             widget.value_sb.setValue(int(0))
 
-:meth:`easymodel.widgetdelegate.Widgetdelegate.set_widget_index` does the same for
+:meth:`easymodel.Widgetdelegate.set_widget_index` does the same for
 the widget that is rendered. Every time an index is painted, the widget has to
 be set in the right state to represent the index. Because we already did that for the editor
 we can reuse the function::
@@ -221,7 +219,7 @@ we can reuse the function::
     def set_widget_index(self, index):
         self.setEditorData(self.widget, index)
 
-Now all that is left is :meth:`easymodel.widgetdelegate.Widgetdelegate.setModelData`.
+Now all that is left is :meth:`easymodel.Widgetdelegate.setModelData`.
 Here you take the value from the editor and set the data in the model::
 
     def setModelData(self, editor, model, index):
@@ -231,9 +229,9 @@ Here you take the value from the editor and set the data in the model::
 Done! Now you can use the delegate in any view. But I recommend using
 one of the views in :mod:`easymodel.widgetdelegate`.
 
-You can either use the :class:`WidgetDelegateViewMixin` for your own views or use one
-of the premade views: :class:`WD_AbstractItemView`, :class:`WD_ListView`, :class:`WD_TableView`
-:class:`WD_TreeView`.
+You can either use the :class:`easymodel.WidgetDelegateViewMixin` for your own views or use one
+of the premade views: :class:`easymodel.WD_AbstractItemView`,
+:class:`easymodel.WD_ListView`, :class:`easymodel.WD_TableView`, :class:`easymodel.WD_TreeView`.
 
 They will make the user experience better. When the user clicks an widget delegate, it will
 be set into edit mode and the click will be propagated to the editor. That way it behaves almost
@@ -260,7 +258,7 @@ First create the widget::
           self.add_hbox = QtGui.QHBoxLayout()
   
           self.instruction_lb = QtGui.QLabel("Select Item and click add!", self)
-          self.view = widgetdelegate.WD_TreeView(self)
+          self.view = easymodel.WD_TreeView(self)
   
           self.add_pb = QtGui.QPushButton('Add')
           self.add_pb.clicked.connect(self.add_airplane)
@@ -288,10 +286,10 @@ First create the widget::
           
           # Now we can build ourselves models
           # First we need a root
-          rootdata = treemodel.ListItemData(['Name', 'Velocity', 'Altitude'])
-          root = treemodel.TreeItem(rootdata)
+          rootdata = easymodel.ListItemData(['Name', 'Velocity', 'Altitude'])
+          root = easymodel.TreeItem(rootdata)
           # Create a new model with the root
-          model = treemodel.TreeModel(root)
+          model = easymodel.TreeModel(root)
 
 	  self.view.setModel(model)
 
@@ -305,7 +303,7 @@ data/item and parent it under the current index::
               # items are stored in the internal pointer
 	      # but if you use a proxy model this might not work
 	      # user the TREEITEM_ROLE instead
-              pitem = currentindex.data(treemodel.TREEITEM_ROLE)
+              pitem = currentindex.data(easymodel.TREEITEM_ROLE)
 	  else:
               # nothing selected. Take root as parent
               pitem = self.view.model().root
@@ -320,7 +318,7 @@ data/item and parent it under the current index::
           # create a tree item.
           # because parent is given, the item will
           # automatically be inserted in the model
-          treemodel.TreeItem(adata, parent=pitem)
+          easymodel.TreeItem(adata, parent=pitem)
 
 The rest of the app code can look like this::
 
@@ -340,7 +338,7 @@ Everything put together::
   
   from PySide import QtCore, QtGui
   
-  from easymodel import treemodel, widgetdelegate
+  import easymodel
   
   
   class Airplane(object):
@@ -354,7 +352,7 @@ Everything put together::
           self.altitude = altitude
   
   
-  class AirplaneItemData(treemodel.ItemData):
+  class AirplaneItemData(easymodel.ItemData):
       """An item data object that can extract information from an airplane instance.
       """
       def __init__(self, airplane):
@@ -409,7 +407,7 @@ Everything put together::
           self.value_sb.setValue(v)
   
   
-  class RandomSpinBoxDelegate(widgetdelegate.WidgetDelegate):
+  class RandomSpinBoxDelegate(easymodel.WidgetDelegate):
       """RandomSpinBox delegate
       """
   
@@ -444,7 +442,7 @@ Everything put together::
           self.add_hbox = QtGui.QHBoxLayout()
   
           self.instruction_lb = QtGui.QLabel("Select Item and click add!", self)
-          self.view = widgetdelegate.WD_TreeView(self)
+          self.view = easymodel.WD_TreeView(self)
   
           self.add_pb = QtGui.QPushButton('Add')
           self.add_pb.clicked.connect(self.add_airplane)
@@ -468,15 +466,15 @@ Everything put together::
           self.add_hbox.addWidget(self.altitude_sb)
   
           self.delegate1 = RandomSpinBoxDelegate()
-          #elf.view.setItemDelegateForColumn(2, self.delegate1)
+          self.view.setItemDelegateForColumn(2, self.delegate1)
   
           # Now we can build ourselves models
           # First we need a root
-          rootdata = treemodel.ListItemData(['Name', 'Velocity', 'Altitude'])
-          root = treemodel.TreeItem(rootdata)
+          rootdata = easymodel.ListItemData(['Name', 'Velocity', 'Altitude'])
+          root = easymodel.TreeItem(rootdata)
   
           # Create a new model with the root
-          self.model = treemodel.TreeModel(root)
+          self.model = easymodel.TreeModel(root)
           self.view.setModel(self.model)
   
       def add_airplane(self, *args, **kwargs):
@@ -486,7 +484,7 @@ Everything put together::
               # items are stored in the internal pointer
 	      # but if you use a proxy model this might not work
 	      # user the TREEITEM_ROLE instead
-              pitem = currentindex.data(treemodel.TREEITEM_ROLE)
+              pitem = currentindex.data(easymodel.TREEITEM_ROLE)
           else:
               # nothing selected. Take root as parent
               pitem = self.view.model().root
@@ -501,7 +499,7 @@ Everything put together::
           # create a tree item.
           # because parent is given, the item will
           # automatically be inserted in the model
-          treemodel.TreeItem(adata, parent=pitem)
+          easymodel.TreeItem(adata, parent=pitem)
   
   if __name__ == "__main__":
       # Create a view to show what is happening
