@@ -2,7 +2,7 @@ import pytest
 
 from PySide import QtCore
 
-from easymodel import treemodel
+import easymodel
 
 DR = QtCore.Qt.DisplayRole
 
@@ -10,19 +10,19 @@ DR = QtCore.Qt.DisplayRole
 @pytest.fixture(scope='function')
 def str_list_data():
     """Item data with a string list. ['a', 'b', 'hallo']"""
-    return treemodel.ListItemData(['a', 'b', 'hallo'])
+    return easymodel.ListItemData(['a', 'b', 'hallo'])
 
 
 @pytest.fixture(scope='function')
 def int_list_data():
     """Item data with an in list. [1, 2, 3, 4, 5, 6]"""
-    return treemodel.ListItemData([1, 2, 3, 4, 5, 6])
+    return easymodel.ListItemData([1, 2, 3, 4, 5, 6])
 
 
 @pytest.fixture(scope='function')
 def mix_list_data():
     """Item data with a mixed list. ['a', None, False, 1, [1, '2']]"""
-    return treemodel.ListItemData(['a', None, False, 1, [1, '2']])
+    return easymodel.ListItemData(['a', None, False, 1, [1, '2']])
 
 
 @pytest.fixture(scope='function')
@@ -85,14 +85,14 @@ def test_listdata_setdata(fixture, column, role, new, listdatas):
 
 
 def test_listdata_set_data_false_role():
-    data = treemodel.ListItemData(['1', 2], editable=True)
+    data = easymodel.ListItemData(['1', 2], editable=True)
     assert data.set_data(0, 0, QtCore.Qt.DecorationRole) is False
     assert data.set_data(0, 'a', QtCore.Qt.DecorationRole) is False
 
 
 def test_listdata_flags():
-    e = treemodel.ListItemData(list(range(3)), editable=True)
-    s = treemodel.ListItemData(list(range(3)), editable=False)
+    e = easymodel.ListItemData(list(range(3)), editable=True)
+    s = easymodel.ListItemData(list(range(3)), editable=False)
     default = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
     for i in range(3):
         assert e.flags(i) == default | QtCore.Qt.ItemIsEditable
@@ -111,7 +111,7 @@ def stubitemdata1():
     Set data can change that.
     Column Count is 1.
     """
-    class StubItemData1(treemodel.ItemData):
+    class StubItemData1(easymodel.ItemData):
         def __init__(self):
             self.d = "Data1"
 
@@ -138,7 +138,7 @@ def stubitemdata2():
     Column Count is 2.
     Flags returns 99.
     """
-    class StubItemData2(treemodel.ItemData):
+    class StubItemData2(easymodel.ItemData):
         def data(self, column, role):
             if role == DR:
                 if column == 0:
@@ -163,7 +163,7 @@ def test_itemdata_default_setdata(stubitemdata2):
 
 @pytest.fixture(scope='function')
 def stub_tree(stubitemdata1, stubitemdata2):
-    """Simple :class:`treemodel.TreeItem` tree.
+    """Simple :class:`easymodel.TreeItem` tree.
 
     :root: TreeItem(None)
     :itdata1: stubitemdata2
@@ -173,11 +173,11 @@ def stub_tree(stubitemdata1, stubitemdata2):
 
     :returns: (root, c1, c2, c3, itdata1)
     """
-    root = treemodel.TreeItem(None)
+    root = easymodel.TreeItem(None)
     itdata1 = stubitemdata2()
-    c1 = treemodel.TreeItem(itdata1, root)
-    c2 = treemodel.TreeItem(stubitemdata2(), root)
-    c3 = treemodel.TreeItem(stubitemdata1(), c2)
+    c1 = easymodel.TreeItem(itdata1, root)
+    c2 = easymodel.TreeItem(stubitemdata2(), root)
+    c3 = easymodel.TreeItem(stubitemdata1(), c2)
     return (root, c1, c2, c3, itdata1,)
 
 
@@ -237,8 +237,8 @@ def test_treeitem_userroles(stub_tree):
     items = stub_tree[0:-1]
     for i in items:
         for c in range(-2, 4):
-            assert i.data(c, treemodel.TREEITEM_ROLE) is i
-            idata = i.data(c, treemodel.INTERNAL_OBJ_ROLE)
+            assert i.data(c, easymodel.TREEITEM_ROLE) is i
+            idata = i.data(c, easymodel.INTERNAL_OBJ_ROLE)
             if i._data is not None:
                  assert idata is i.internal_data()
             else:
@@ -266,14 +266,14 @@ def test_treeitem_internal_data(stub_tree):
     for i in stub_tree[1:-1]:
         assert i.internal_data() is None
     l = [1, 2, 3]
-    data = treemodel.ListItemData(l)
-    assert treemodel.TreeItem(data).internal_data() is l
+    data = easymodel.ListItemData(l)
+    assert easymodel.TreeItem(data).internal_data() is l
 
 
 @pytest.mark.parametrize("new", ["new", 1, 2, "test"])
 def test_treeitem_set_data(new, stubitemdata1):
     itdata = stubitemdata1()
-    ti = treemodel.TreeItem(itdata,)
+    ti = easymodel.TreeItem(itdata,)
     ti.set_data(0, new, DR)
     assert ti.data(0, DR) == new
 
@@ -290,13 +290,13 @@ def stub_model(stubitemdata1, stubitemdata2):
     :c4: TreeItem(stubitemdata1(), c2)
     :c5: TreeItem(stubitemdata1(), c4)
     """
-    root = treemodel.TreeItem(None)
-    m = treemodel.TreeModel(root)
-    c1 = treemodel.TreeItem(stubitemdata2(), root)
-    c2 = treemodel.TreeItem(stubitemdata2(), root)
-    c3 = treemodel.TreeItem(stubitemdata1(), c2)
-    c4 = treemodel.TreeItem(stubitemdata1(), c2)
-    c5 = treemodel.TreeItem(stubitemdata1(), c4)
+    root = easymodel.TreeItem(None)
+    m = easymodel.TreeModel(root)
+    c1 = easymodel.TreeItem(stubitemdata2(), root)
+    c2 = easymodel.TreeItem(stubitemdata2(), root)
+    c3 = easymodel.TreeItem(stubitemdata1(), c2)
+    c4 = easymodel.TreeItem(stubitemdata1(), c2)
+    c5 = easymodel.TreeItem(stubitemdata1(), c4)
     return (m, root, c1, c2, c3, c4, c5)
 
 
@@ -414,9 +414,9 @@ def test_model_headerdata(stub_model):
         assert m.headerData(i, QtCore.Qt.Horizontal, DR) == str(i+1)
         assert m.headerData(i, QtCore.Qt.Vertical, DR) == str(i+1)
 
-    rootdata = treemodel.ListItemData(['Sec1', 'Head2', 'Chap3'])
-    root = treemodel.TreeItem(rootdata)
-    m2 = treemodel.TreeModel(root)
+    rootdata = easymodel.ListItemData(['Sec1', 'Head2', 'Chap3'])
+    root = easymodel.TreeItem(rootdata)
+    m2 = easymodel.TreeModel(root)
 
     assert m2.headerData(0, QtCore.Qt.Horizontal, DR) == 'Sec1'
     assert m2.headerData(1, QtCore.Qt.Horizontal, DR) == 'Head2'
@@ -446,7 +446,7 @@ def test_model_insertrow(stubitemdata1, stub_model, stub_model_indexes):
     parent = stub_model_indexes[0]
     parentitem = parent.internalPointer()
     for r in rows:
-        i = treemodel.TreeItem(stubitemdata1())
+        i = easymodel.TreeItem(stubitemdata1())
         inserted = m.insertRow(r, i, parent)
         assert inserted is True
         assert i._model is m

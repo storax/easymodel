@@ -26,6 +26,9 @@ from functools import partial
 
 from PySide import QtCore, QtGui
 
+__all__ = ['WidgetDelegate', 'WidgetDelegateViewMixin',
+           'WD_AbstractItemView', 'WD_ListView', 'WD_TableView', 'WD_TreeView']
+
 
 class WidgetDelegate(QtGui.QStyledItemDelegate):
     """A delegate for drawing a arbitrary QWidget
@@ -158,7 +161,7 @@ class WidgetDelegate(QtGui.QStyledItemDelegate):
         :rtype: None
         :raises: None
         """
-        for k in reversed(self._edit_widgets.keys()):
+        for k in list(self._edit_widgets):
             self.commit_close_editor(k)
 
     def createEditor(self, parent, option, index):
@@ -180,7 +183,7 @@ class WidgetDelegate(QtGui.QStyledItemDelegate):
         :rtype: :class:`QtGui.QWidget` | None
         :raises: None
         """
-        # close all editors
+        # We should not have two editors open at the same time
         self.close_editors()
         e = self.create_editor_widget(parent, option, index)
         if e:
@@ -282,7 +285,7 @@ class WidgetDelegateViewMixin(object):
     """
     def __init__(self, *args, **kwargs):
         super(WidgetDelegateViewMixin, self).__init__(*args, **kwargs)
-        self.__recursing = False  # check if we are recursing if posting a click event
+        self.__recursing = False
 
     def index_at_event(self, event):
         """Get the index under the position of the given MouseEvent
@@ -293,7 +296,6 @@ class WidgetDelegateViewMixin(object):
         :rtype: :class:`QtCore.QModelIndex`
         :raises: None
         """
-        # find index at mouse position
         globalpos = event.globalPos()
         viewport = self.viewport()
         pos = viewport.mapFromGlobal(globalpos)
@@ -311,7 +313,7 @@ class WidgetDelegateViewMixin(object):
         :rtype: :class:`QtCore.QPoint`
         :raises: None
         """
-        rect = self.visualRect(index)  # rect of the index
+        rect = self.visualRect(index)
         p = self.viewport().mapToGlobal(rect.topLeft())
         return globalpos - p
 
@@ -332,28 +334,21 @@ class WidgetDelegateViewMixin(object):
         # and we recieve it again, terminate
         if self.__recursing:
             return
-        # find index at mouse position
         i = self.index_at_event(event)
 
-        # if the index is not valid, we don't care
-        # handle it the default way
         if not i.isValid():
             return getattr(super(WidgetDelegateViewMixin, self), eventhandler)(event)
-        # get the widget delegate. if there is None, handle it the default way
         delegate = self.itemDelegate(i)
         if not isinstance(delegate, WidgetDelegate):
             return getattr(super(WidgetDelegateViewMixin, self), eventhandler)(event)
 
-        # see if there is already a editor
         widget = delegate.edit_widget(i)
         if not widget:
-            # close all editors, then start editing
             delegate.close_editors()
             # Force editing. If in editing state, view will refuse editing.
             if self.state() == self.EditingState:
                 self.setState(self.NoState)
             self.edit(i)
-            # get the editor widget. if there is None, there is nothing to do so return
             widget = delegate.edit_widget(i)
         if not widget:
             return getattr(super(WidgetDelegateViewMixin, self), eventhandler)(event)
@@ -369,13 +364,13 @@ class WidgetDelegateViewMixin(object):
             widgettoclick = widget
             clickpos = pid
 
-        # create a new event for the editor widget.
         e = QtGui.QMouseEvent(event.type(),
                               clickpos,
                               event.button(),
                               event.buttons(),
                               event.modifiers())
         # before we send, make sure, we cannot recurse
+        # because the click event might get propagated and we receive it again
         self.__recursing = True
         try:
             r = QtGui.QApplication.sendEvent(widgettoclick, e)

@@ -18,6 +18,9 @@ import abc
 
 from PySide import QtCore
 
+__all__ = ['INTERNAL_OBJ_ROLE', 'TREEITEM_ROLE',
+           'ItemData', 'ListItemData', 'TreeItem', 'TreeModel']
+
 
 INTERNAL_OBJ_ROLE = QtCore.Qt.UserRole
 """:data:`QtCore.Qt.ItemDataRole` to retrieve the object stored by the item data.
@@ -639,10 +642,10 @@ class TreeModel(QtCore.QAbstractItemModel):
         if orientation == QtCore.Qt.Horizontal:
             d = self._root.data(section, role)
             if d is None and role == QtCore.Qt.DisplayRole:
-                return str(section+1)
+                return str(section + 1)
             return d
         if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
-            return str(section+1)
+            return str(section + 1)
 
     def insertRow(self, row, item, parent):
         """Insert a single item before the given row in the child items of the parent specified.
@@ -731,7 +734,6 @@ class TreeModel(QtCore.QAbstractItemModel):
         :rtype: :class:`QtCore.QModelIndex`
         :raises: ValueError
         """
-        # root has an invalid index
         if item == self._root:
             return QtCore.QModelIndex()
         # find all parents to get their index
